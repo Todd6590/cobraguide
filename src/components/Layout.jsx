@@ -1,7 +1,7 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Building2, Users, CalendarClock, 
-  Mail, DollarSign, Shield, ChevronLeft, ChevronRight, LogOut
+  Mail, DollarSign, Shield, ChevronLeft, ChevronRight, LogOut, BarChart2
 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ const navItems = [
   { path: '/events', label: 'Qualifying Events', icon: CalendarClock },
   { path: '/notices', label: 'Notices', icon: Mail },
   { path: '/payments', label: 'Payments', icon: DollarSign },
+  { path: '/reports', label: 'Employer Reports', icon: BarChart2 },
 ];
 
 export default function Layout() {

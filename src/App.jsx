@@ -15,6 +15,7 @@ import QualifyingEvents from '@/pages/QualifyingEvents';
 import Notices from '@/pages/Notices';
 import Payments from '@/pages/Payments';
 import NoticeDetail from '@/pages/NoticeDetail';
+import Reports from '@/pages/Reports';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -47,6 +48,7 @@ const AuthenticatedApp = () => {
         <Route path="/notices" element={<Notices />} />
         <Route path="/payments" element={<Payments />} />
         <Route path="/notices/:id" element={<NoticeDetail />} />
+        <Route path="/reports" element={<Reports />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
