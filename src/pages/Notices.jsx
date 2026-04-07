@@ -33,18 +33,12 @@ export default function Notices() {
 
   const { data: notices = [], isLoading } = useQuery({ queryKey: ['notices'], queryFn: () => base44.entities.CobraNotice.list() });
   const { data: beneficiaries = [] } = useQuery({ queryKey: ['beneficiaries'], queryFn: () => base44.entities.Beneficiary.list() });
-  const { data: clients = [] } = useQuery({ queryKey: ['clients'], queryFn: () => base44.entities.Client.list() });
-  const { data: qualifyingEvents = [] } = useQuery({ queryKey: ['qualifying_events'], queryFn: () => base44.entities.QualifyingEvent.list() });
 
   const handleResendEmail = async (notice) => {
     setSendingEmail(notice.id);
-    const beneficiary = beneficiaries.find(b => b.id === notice.beneficiary_id);
-    const client = clients.find(c => c.id === notice.client_id);
-    const qualifyingEvent = qualifyingEvents.find(e => e.id === notice.qualifying_event_id);
-    const adminEmail = await base44.auth.me().then(u => u.email).catch(() => null);
-    await sendNoticeEmails({ notice, beneficiary, qualifyingEvent, client, adminEmail });
+    await sendNoticeEmails({ notice });
     setSendingEmail(null);
-    toast({ title: 'Notice emails sent', description: `Notice emailed to admin and client contact.` });
+    toast({ title: 'Notice emails sent', description: 'Notice emailed to admin and client contact.' });
   };
 
   const saveMutation = useMutation({
