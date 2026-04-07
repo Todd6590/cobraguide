@@ -12,7 +12,7 @@ import PageHeader from '@/components/shared/PageHeader';
 import StatusBadge from '@/components/shared/StatusBadge';
 import BeneficiaryFormDialog from '@/components/beneficiaries/BeneficiaryFormDialog';
 import NoticeGenerationStatus from '@/components/beneficiaries/NoticeGenerationStatus';
-import { generateRequiredNotices } from '@/lib/cobraUtils';
+import { generateRequiredNotices, COVERAGE_MONTHS } from '@/lib/cobraUtils';
 import { sendNoticeEmails } from '@/lib/noticeEmailService';
 
 export default function Beneficiaries() {
@@ -31,10 +31,6 @@ export default function Beneficiaries() {
     queryKey: ['clients'],
     queryFn: () => base44.entities.Client.list()
   });
-  const { data: qualifyingEvents = [] } = useQuery({
-    queryKey: ['qualifying_events'],
-    queryFn: () => base44.entities.QualifyingEvent.list()
-  });
   const { data: existingNotices = [] } = useQuery({
     queryKey: ['notices'],
     queryFn: () => base44.entities.CobraNotice.list()
@@ -42,23 +38,40 @@ export default function Beneficiaries() {
 
   const saveMutation = useMutation({
     mutationFn: async (data) => {
-      // Extract helper fields before saving
-      const { _selectedEventId, _selectedEvent, _selectedClient, ...beneficiaryData } = data;
+      const {
+        event_type, event_date, coverage_loss_date, notification_date,
+        ...beneficiaryData
+      } = data;
 
       // Save / update the beneficiary
       const saved = editing
         ? await base44.entities.Beneficiary.update(editing.id, beneficiaryData)
         : await base44.entities.Beneficiary.create(beneficiaryData);
 
-      // If a qualifying event was linked, auto-generate notices
-      if (_selectedEvent) {
-        const beneficiaryWithId = { ...saved, id: saved.id };
-        const clientRecord = _selectedClient || clients.find(c => c.id === saved.client_id);
-        const requiredNotices = generateRequiredNotices(beneficiaryWithId, _selectedEvent, clientRecord);
+      // If a qualifying event was entered inline, create it and auto-generate notices
+      if (event_type && event_date) {
+        const clientRecord = clients.find(c => c.id === saved.client_id);
+        const beneficiaryWithId = { ...saved };
 
-        // Avoid duplicates: skip notice types already present for this beneficiary + event
+        // Create the QualifyingEvent record
+        const qualifyingEvent = await base44.entities.QualifyingEvent.create({
+          beneficiary_id: saved.id,
+          beneficiary_name: `${saved.first_name} ${saved.last_name}`,
+          client_id: saved.client_id,
+          client_name: clientRecord?.company_name || saved.client_name,
+          event_type,
+          event_date,
+          coverage_loss_date: coverage_loss_date || event_date,
+          notification_date: notification_date || event_date,
+          max_coverage_months: COVERAGE_MONTHS[event_type] || 18,
+          status: 'notice_sent',
+        });
+
+        const requiredNotices = generateRequiredNotices(beneficiaryWithId, qualifyingEvent, clientRecord);
+
+        // Avoid duplicates
         const alreadyCreated = existingNotices
-          .filter(n => n.beneficiary_id === saved.id && n.qualifying_event_id === _selectedEvent.id)
+          .filter(n => n.beneficiary_id === saved.id && n.qualifying_event_id === qualifyingEvent.id)
           .map(n => n.notice_type);
 
         const newNotices = requiredNotices.filter(n => !alreadyCreated.includes(n.notice_type));
@@ -70,17 +83,10 @@ export default function Beneficiaries() {
         }
 
         // Send emails for each new notice
-        const adminEmail = await base44.auth.me().then(u => u.email).catch(() => null);
         const emailResults = [];
         for (const notice of createdNotices) {
           try {
-            const result = await sendNoticeEmails({
-              notice,
-              beneficiary: beneficiaryWithId,
-              qualifyingEvent: _selectedEvent,
-              client: clientRecord,
-              adminEmail,
-            });
+            const result = await sendNoticeEmails({ notice });
             emailResults.push({ notice, ...result });
           } catch (err) {
             emailResults.push({ notice, adminSent: false, clientSent: false, error: err.message });
@@ -95,6 +101,7 @@ export default function Beneficiaries() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['beneficiaries'] });
       queryClient.invalidateQueries({ queryKey: ['notices'] });
+      queryClient.invalidateQueries({ queryKey: ['qualifying_events'] });
       setDialogOpen(false);
       setEditing(null);
     },
@@ -189,7 +196,6 @@ export default function Beneficiaries() {
         onOpenChange={setDialogOpen}
         beneficiary={editing}
         clients={clients}
-        qualifyingEvents={qualifyingEvents}
         onSave={(data) => saveMutation.mutate(data)}
         saving={saveMutation.isPending}
       />

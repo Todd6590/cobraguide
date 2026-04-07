@@ -1,4 +1,4 @@
-import { addMonths, addDays, format } from 'date-fns';
+import { addMonths, addDays, format, endOfMonth, startOfMonth } from 'date-fns';
 
 // COBRA coverage duration by event type (per DOL/ERISA)
 export const COVERAGE_MONTHS = {
@@ -29,6 +29,33 @@ export const NOTICE_TYPE_LABELS = {
   insufficient_payment: 'Insufficient Payment Notice',
   conversion: 'Conversion Notice',
 };
+
+/**
+ * Calculate coverage loss date: last day of the month of the event date
+ */
+export function calcCoverageLossDate(eventDate) {
+  if (!eventDate) return '';
+  return format(endOfMonth(new Date(eventDate)), 'yyyy-MM-dd');
+}
+
+/**
+ * Calculate COBRA eligible start date: first day of the month following the event date
+ */
+export function calcCobraStartDate(eventDate) {
+  if (!eventDate) return '';
+  return format(startOfMonth(addMonths(new Date(eventDate), 1)), 'yyyy-MM-dd');
+}
+
+/**
+ * Calculate notification date per DOL/ERISA requirements.
+ * Employer must notify the plan administrator within 30 days of the qualifying event.
+ * (For divorce/legal separation/loss of dependent status, the qualified beneficiary
+ * must notify the plan within 60 days — we use the standard 30-day employer rule.)
+ */
+export function calcNotificationDate(eventDate) {
+  if (!eventDate) return '';
+  return format(addDays(new Date(eventDate), 30), 'yyyy-MM-dd');
+}
 
 /**
  * Calculate COBRA end date from start date and event type
