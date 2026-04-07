@@ -21,9 +21,27 @@ const defaultForm = {
   date_of_birth: '', address: '', city: '', state: '', zip: '',
   client_id: '', client_name: '', relationship: 'employee',
   coverage_type: 'medical', insurance_carriers: '', cobra_status: 'pending_event',
-  cobra_start_date: '', cobra_end_date: '', monthly_premium: '', notes: '',
+  cobra_start_date: '', cobra_end_date: '',
+  premium_medical: '', premium_dental: '', premium_vision: '',
+  monthly_premium: '', notes: '',
   // qualifying event fields (inline)
   event_type: '', event_date: '',
+};
+
+const COVERAGE_INCLUDES = {
+  medical: ['medical'],
+  dental: ['dental'],
+  vision: ['vision'],
+  medical_dental: ['medical', 'dental'],
+  medical_vision: ['medical', 'vision'],
+  medical_dental_vision: ['medical', 'dental', 'vision'],
+  dental_vision: ['dental', 'vision'],
+};
+
+const PREMIUM_LABELS = {
+  medical: 'Medical Monthly Premium',
+  dental: 'Dental Monthly Premium',
+  vision: 'Vision Monthly Premium',
 };
 
 export default function BeneficiaryFormDialog({
@@ -66,13 +84,32 @@ export default function BeneficiaryFormDialog({
     });
   };
 
+  const handlePremiumChange = (field, value) => {
+    setForm(f => {
+      const updated = { ...f, [field]: value };
+      const lines = COVERAGE_INCLUDES[updated.coverage_type] || [];
+      const total = lines.reduce((sum, line) => {
+        const v = parseFloat(updated[`premium_${line}`]) || 0;
+        return sum + v;
+      }, 0);
+      return { ...updated, monthly_premium: total > 0 ? total.toFixed(2) : '' };
+    });
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     const selectedClient = clients.find(c => c.id === form.client_id);
+    const lines = COVERAGE_INCLUDES[form.coverage_type] || [];
+    const total = lines.reduce((sum, line) => {
+      return sum + (parseFloat(form[`premium_${line}`]) || 0);
+    }, 0);
     onSave({
       ...form,
       client_name: selectedClient?.company_name || form.client_name,
-      monthly_premium: form.monthly_premium ? Number(form.monthly_premium) : undefined,
+      premium_medical: form.premium_medical ? Number(form.premium_medical) : undefined,
+      premium_dental: form.premium_dental ? Number(form.premium_dental) : undefined,
+      premium_vision: form.premium_vision ? Number(form.premium_vision) : undefined,
+      monthly_premium: total > 0 ? total : undefined,
     });
   };
 
@@ -173,10 +210,6 @@ export default function BeneficiaryFormDialog({
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label>Monthly Premium</Label>
-              <Input type="number" step="0.01" value={form.monthly_premium} onChange={e => set('monthly_premium', e.target.value)} placeholder="$0.00" />
-            </div>
             <div className="sm:col-span-2">
               <Label>Current Insurance Carrier(s)</Label>
               <Input
@@ -194,6 +227,39 @@ export default function BeneficiaryFormDialog({
                 }
               />
             </div>
+          </div>
+
+          {/* Per-line Premiums */}
+          <div className="border border-border rounded-lg p-4 space-y-3">
+            <p className="text-sm font-semibold text-foreground">Monthly Premiums</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {(COVERAGE_INCLUDES[form.coverage_type] || []).map(line => (
+                <div key={line}>
+                  <Label>{PREMIUM_LABELS[line]}</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      className="pl-7"
+                      value={form[`premium_${line}`]}
+                      onChange={e => handlePremiumChange(`premium_${line}`, e.target.value)}
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+            {form.monthly_premium && (
+              <div className="flex items-center justify-between pt-2 border-t border-border">
+                <span className="text-sm font-semibold">Total Monthly Premium (102% COBRA Rate)</span>
+                <span className="text-base font-bold text-primary">
+                  ${(Number(form.monthly_premium) * 1.02).toFixed(2)}/mo
+                  <span className="text-xs text-muted-foreground font-normal ml-2">(Base: ${Number(form.monthly_premium).toFixed(2)})</span>
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Qualifying Event Section */}

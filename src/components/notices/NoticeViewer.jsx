@@ -45,9 +45,19 @@ function buildNoticeText(notice, beneficiary, qualifyingEvent, client) {
   const cobraEnd = fmt(beneficiary.cobra_end_date);
   const coverageLoss = fmt(qualifyingEvent?.coverage_loss_date || qualifyingEvent?.event_date);
   const electionDeadline = fmt(notice.election_deadline);
-  const premium = beneficiary.monthly_premium
-    ? `$${Number(beneficiary.monthly_premium).toFixed(2)}/month`
+  const coverageLines = {
+    medical: beneficiary.premium_medical,
+    dental: beneficiary.premium_dental,
+    vision: beneficiary.premium_vision,
+  };
+  const lineBreakdown = Object.entries(coverageLines)
+    .filter(([, v]) => v > 0)
+    .map(([k, v]) => `${k.charAt(0).toUpperCase() + k.slice(1)}: $${Number(v).toFixed(2)}`)
+    .join(', ');
+  const cobraTotal = beneficiary.monthly_premium
+    ? `$${(Number(beneficiary.monthly_premium) * 1.02).toFixed(2)}/month (102% of $${Number(beneficiary.monthly_premium).toFixed(2)} base${lineBreakdown ? ' — ' + lineBreakdown : ''})`
     : 'as determined by the plan';
+  const premium = cobraTotal;
   const coverageMonths = COVERAGE_MONTHS[qualifyingEvent?.event_type] || 18;
   const planName = client?.company_name || 'the Group Health Plan';
   const adminContact = [
@@ -96,6 +106,8 @@ WHO IS ENTITLED TO ELECT COBRA CONTINUATION COVERAGE?
 Each individual who is a "qualified beneficiary" with respect to this qualifying event has an independent right to elect COBRA continuation coverage. ${name} is a qualified beneficiary entitled to elect COBRA coverage. If applicable, each covered spouse and dependent child also has an independent right to elect.
 
 WHAT IS COBRA CONTINUATION COVERAGE?
+
+NAME OF PLAN: ${beneficiary.insurance_carriers || planName}
 
 COBRA continuation coverage is the same coverage that the Plan gives to other participants or beneficiaries who are not receiving COBRA continuation coverage. Each qualified beneficiary who elects COBRA continuation coverage will have the same rights under the Plan as other participants or beneficiaries covered under the Plan, including special enrollment rights.
 

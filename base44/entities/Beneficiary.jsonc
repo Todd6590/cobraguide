@@ -67,6 +67,22 @@
       "type": "string",
       "description": "Current insurance carrier(s) for the coverage lines indicated"
     },
+    "premium_medical": {
+      "type": "number",
+      "description": "Monthly medical premium"
+    },
+    "premium_dental": {
+      "type": "number",
+      "description": "Monthly dental premium"
+    },
+    "premium_vision": {
+      "type": "number",
+      "description": "Monthly vision premium"
+    },
+    "monthly_premium": {
+      "type": "number",
+      "description": "Total monthly premium (auto-calculated)"
+    },
     "cobra_status": {
       "type": "string",
       "enum": [
@@ -87,9 +103,6 @@
     "cobra_end_date": {
       "type": "string",
       "format": "date"
-    },
-    "monthly_premium": {
-      "type": "number"
     },
     "notes": {
       "type": "string"

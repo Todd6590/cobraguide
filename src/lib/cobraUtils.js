@@ -173,9 +173,14 @@ export function buildNoticeContent(noticeType, beneficiary, qualifyingEvent, cli
   const cobraStartDate = beneficiary.cobra_start_date
     ? format(new Date(beneficiary.cobra_start_date), 'MMMM d, yyyy')
     : 'N/A';
-  const premium = beneficiary.monthly_premium
-    ? `$${beneficiary.monthly_premium.toFixed(2)}`
-    : 'as determined by the plan';
+  const baseAmt = beneficiary.monthly_premium ? Number(beneficiary.monthly_premium) : 0;
+  const cobraAmt = baseAmt ? `$${(baseAmt * 1.02).toFixed(2)}/month (102% of $${baseAmt.toFixed(2)} base)` : 'as determined by the plan';
+  const lineBreakdown = [
+    beneficiary.premium_medical > 0 ? `Medical: $${Number(beneficiary.premium_medical).toFixed(2)}` : null,
+    beneficiary.premium_dental > 0 ? `Dental: $${Number(beneficiary.premium_dental).toFixed(2)}` : null,
+    beneficiary.premium_vision > 0 ? `Vision: $${Number(beneficiary.premium_vision).toFixed(2)}` : null,
+  ].filter(Boolean).join(', ');
+  const premium = lineBreakdown ? `${cobraAmt} (${lineBreakdown})` : cobraAmt;
   const coverageMonths = COVERAGE_MONTHS[qualifyingEvent?.event_type] || 18;
 
   const header = `
@@ -209,6 +214,8 @@ WHO IS ENTITLED TO ELECT COBRA CONTINUATION COVERAGE?
 ${beneficiaryName} (and any eligible dependents covered under the Plan) may be entitled to elect COBRA continuation coverage.
 
 WHAT IS COBRA CONTINUATION COVERAGE?
+
+NAME OF PLAN: ${beneficiary.insurance_carriers || client?.company_name || 'the Group Health Plan'}
 
 COBRA continuation coverage is the same coverage that the Plan gives to other participants or beneficiaries who are not receiving COBRA coverage. Each qualified beneficiary who elects COBRA coverage will have the same rights under the Plan as active employees and their families, including open enrollment and special enrollment rights.
 
