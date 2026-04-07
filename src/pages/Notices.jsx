@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, Search, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, Mail, Loader2 } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
+import { sendNoticeEmails } from '@/lib/noticeEmailService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -25,10 +27,25 @@ export default function Notices() {
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [sendingEmail, setSendingEmail] = useState(null);
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const { data: notices = [], isLoading } = useQuery({ queryKey: ['notices'], queryFn: () => base44.entities.CobraNotice.list() });
   const { data: beneficiaries = [] } = useQuery({ queryKey: ['beneficiaries'], queryFn: () => base44.entities.Beneficiary.list() });
+  const { data: clients = [] } = useQuery({ queryKey: ['clients'], queryFn: () => base44.entities.Client.list() });
+  const { data: qualifyingEvents = [] } = useQuery({ queryKey: ['qualifying_events'], queryFn: () => base44.entities.QualifyingEvent.list() });
+
+  const handleResendEmail = async (notice) => {
+    setSendingEmail(notice.id);
+    const beneficiary = beneficiaries.find(b => b.id === notice.beneficiary_id);
+    const client = clients.find(c => c.id === notice.client_id);
+    const qualifyingEvent = qualifyingEvents.find(e => e.id === notice.qualifying_event_id);
+    const adminEmail = await base44.auth.me().then(u => u.email).catch(() => null);
+    await sendNoticeEmails({ notice, beneficiary, qualifyingEvent, client, adminEmail });
+    setSendingEmail(null);
+    toast({ title: 'Notice emails sent', description: `Notice emailed to admin and client contact.` });
+  };
 
   const saveMutation = useMutation({
     mutationFn: (data) => editing
@@ -103,6 +120,12 @@ export default function Notices() {
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => { setEditing(notice); setDialogOpen(true); }}>
                         <Pencil className="w-4 h-4 mr-2" /> Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleResendEmail(notice)} disabled={sendingEmail === notice.id}>
+                        {sendingEmail === notice.id
+                          ? <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          : <Mail className="w-4 h-4 mr-2" />}
+                        Resend Emails
                       </DropdownMenuItem>
                       <DropdownMenuItem className="text-destructive" onClick={() => deleteMutation.mutate(notice.id)}>
                         <Trash2 className="w-4 h-4 mr-2" /> Delete

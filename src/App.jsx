@@ -10,7 +10,7 @@ import Layout from '@/components/Layout';
 import Dashboard from '@/pages/Dashboard';
 import Clients from '@/pages/Clients';
 import ClientDetail from '@/pages/ClientDetail';
-import Beneficiaries from '@/pages/Beneficiaries';
+import Beneficiaries from '@/pages/Beneficiaries.jsx';
 import QualifyingEvents from '@/pages/QualifyingEvents';
 import Notices from '@/pages/Notices';
 import Payments from '@/pages/Payments';

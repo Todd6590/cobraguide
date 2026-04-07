@@ -1,33 +1,105 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, Search, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, FileText, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { useToast } from '@/components/ui/use-toast';
 import PageHeader from '@/components/shared/PageHeader';
 import StatusBadge from '@/components/shared/StatusBadge';
 import BeneficiaryFormDialog from '@/components/beneficiaries/BeneficiaryFormDialog';
+import NoticeGenerationStatus from '@/components/beneficiaries/NoticeGenerationStatus';
+import { generateRequiredNotices } from '@/lib/cobraUtils';
+import { sendNoticeEmails } from '@/lib/noticeEmailService';
 
 export default function Beneficiaries() {
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [generationStatus, setGenerationStatus] = useState(null); // { status, notices, errors }
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
-  const { data: beneficiaries = [], isLoading } = useQuery({ queryKey: ['beneficiaries'], queryFn: () => base44.entities.Beneficiary.list() });
-  const { data: clients = [] } = useQuery({ queryKey: ['clients'], queryFn: () => base44.entities.Client.list() });
+  const { data: beneficiaries = [], isLoading } = useQuery({
+    queryKey: ['beneficiaries'],
+    queryFn: () => base44.entities.Beneficiary.list()
+  });
+  const { data: clients = [] } = useQuery({
+    queryKey: ['clients'],
+    queryFn: () => base44.entities.Client.list()
+  });
+  const { data: qualifyingEvents = [] } = useQuery({
+    queryKey: ['qualifying_events'],
+    queryFn: () => base44.entities.QualifyingEvent.list()
+  });
+  const { data: existingNotices = [] } = useQuery({
+    queryKey: ['notices'],
+    queryFn: () => base44.entities.CobraNotice.list()
+  });
 
   const saveMutation = useMutation({
-    mutationFn: (data) => editing
-      ? base44.entities.Beneficiary.update(editing.id, data)
-      : base44.entities.Beneficiary.create(data),
+    mutationFn: async (data) => {
+      // Extract helper fields before saving
+      const { _selectedEventId, _selectedEvent, _selectedClient, ...beneficiaryData } = data;
+
+      // Save / update the beneficiary
+      const saved = editing
+        ? await base44.entities.Beneficiary.update(editing.id, beneficiaryData)
+        : await base44.entities.Beneficiary.create(beneficiaryData);
+
+      // If a qualifying event was linked, auto-generate notices
+      if (_selectedEvent) {
+        const beneficiaryWithId = { ...saved, id: saved.id };
+        const clientRecord = _selectedClient || clients.find(c => c.id === saved.client_id);
+        const requiredNotices = generateRequiredNotices(beneficiaryWithId, _selectedEvent, clientRecord);
+
+        // Avoid duplicates: skip notice types already present for this beneficiary + event
+        const alreadyCreated = existingNotices
+          .filter(n => n.beneficiary_id === saved.id && n.qualifying_event_id === _selectedEvent.id)
+          .map(n => n.notice_type);
+
+        const newNotices = requiredNotices.filter(n => !alreadyCreated.includes(n.notice_type));
+
+        const createdNotices = [];
+        for (const notice of newNotices) {
+          const created = await base44.entities.CobraNotice.create(notice);
+          createdNotices.push(created);
+        }
+
+        // Send emails for each new notice
+        const adminEmail = await base44.auth.me().then(u => u.email).catch(() => null);
+        const emailResults = [];
+        for (const notice of createdNotices) {
+          try {
+            const result = await sendNoticeEmails({
+              notice,
+              beneficiary: beneficiaryWithId,
+              qualifyingEvent: _selectedEvent,
+              client: clientRecord,
+              adminEmail,
+            });
+            emailResults.push({ notice, ...result });
+          } catch (err) {
+            emailResults.push({ notice, adminSent: false, clientSent: false, error: err.message });
+          }
+        }
+
+        setGenerationStatus({ notices: createdNotices, emailResults });
+      }
+
+      return saved;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['beneficiaries'] });
+      queryClient.invalidateQueries({ queryKey: ['notices'] });
       setDialogOpen(false);
       setEditing(null);
+    },
+    onError: (err) => {
+      toast({ title: 'Error saving beneficiary', description: err.message, variant: 'destructive' });
     }
   });
 
@@ -67,6 +139,7 @@ export default function Beneficiaries() {
               <TableHead>Client</TableHead>
               <TableHead>Relationship</TableHead>
               <TableHead>Coverage</TableHead>
+              <TableHead>COBRA Dates</TableHead>
               <TableHead>Premium</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="w-12"></TableHead>
@@ -74,15 +147,20 @@ export default function Beneficiaries() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={7} className="text-center py-10 text-muted-foreground">Loading...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="text-center py-10 text-muted-foreground">Loading...</TableCell></TableRow>
             ) : filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={7} className="text-center py-10 text-muted-foreground">No beneficiaries found</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="text-center py-10 text-muted-foreground">No beneficiaries found</TableCell></TableRow>
             ) : filtered.map(b => (
               <TableRow key={b.id} className="hover:bg-muted/50">
                 <TableCell className="font-medium">{b.first_name} {b.last_name}</TableCell>
                 <TableCell className="text-sm">{b.client_name || '—'}</TableCell>
                 <TableCell className="text-sm capitalize">{b.relationship || '—'}</TableCell>
                 <TableCell className="text-sm capitalize">{b.coverage_type?.replace(/_/g, ' + ') || '—'}</TableCell>
+                <TableCell className="text-xs text-muted-foreground">
+                  {b.cobra_start_date && <div>Start: {b.cobra_start_date}</div>}
+                  {b.cobra_end_date && <div>End: {b.cobra_end_date}</div>}
+                  {!b.cobra_start_date && !b.cobra_end_date && '—'}
+                </TableCell>
                 <TableCell className="text-sm">{b.monthly_premium ? `$${b.monthly_premium.toFixed(2)}` : '—'}</TableCell>
                 <TableCell><StatusBadge status={b.cobra_status} /></TableCell>
                 <TableCell>
@@ -111,9 +189,17 @@ export default function Beneficiaries() {
         onOpenChange={setDialogOpen}
         beneficiary={editing}
         clients={clients}
+        qualifyingEvents={qualifyingEvents}
         onSave={(data) => saveMutation.mutate(data)}
         saving={saveMutation.isPending}
       />
+
+      {generationStatus && (
+        <NoticeGenerationStatus
+          status={generationStatus}
+          onClose={() => setGenerationStatus(null)}
+        />
+      )}
     </div>
   );
 }
