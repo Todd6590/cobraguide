@@ -23,8 +23,7 @@
       "description": "Primary contact phone"
     },
     "address": {
-      "type": "string",
-      "description": "Company address"
+      "type": "string"
     },
     "city": {
       "type": "string"
@@ -60,6 +59,23 @@
     "employee_count": {
       "type": "number",
       "description": "Number of employees"
+    },
+    "payment_remit_to": {
+      "type": "string",
+      "enum": [
+        "client",
+        "broker"
+      ],
+      "default": "client",
+      "description": "Who payments are remitted to"
+    },
+    "broker_name": {
+      "type": "string",
+      "description": "Broker contact name"
+    },
+    "broker_email": {
+      "type": "string",
+      "description": "Broker email address"
     },
     "notes": {
       "type": "string"

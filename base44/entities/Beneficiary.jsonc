@@ -63,6 +63,10 @@
         "dental_vision"
       ]
     },
+    "insurance_carriers": {
+      "type": "string",
+      "description": "Current insurance carrier(s) for the coverage lines indicated"
+    },
     "cobra_status": {
       "type": "string",
       "enum": [

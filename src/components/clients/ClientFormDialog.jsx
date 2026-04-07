@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 const defaultForm = {
   company_name: '', ein: '', contact_name: '', contact_email: '', contact_phone: '',
   address: '', city: '', state: '', zip: '', plan_type: 'medical', status: 'active',
-  employee_count: '', notes: ''
+  employee_count: '', payment_remit_to: 'client', broker_name: '', broker_email: '', notes: ''
 };
 
 const planLabels = {
@@ -113,6 +113,29 @@ export default function ClientFormDialog({ open, onOpenChange, client, onSave, s
               <Label>Zip</Label>
               <Input value={form.zip} onChange={e => set('zip', e.target.value)} />
             </div>
+            <div>
+              <Label>Payments Will Be Remitted To</Label>
+              <Select value={form.payment_remit_to} onValueChange={v => set('payment_remit_to', v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="client">Client</SelectItem>
+                  <SelectItem value="broker">Broker</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div></div>
+            {form.payment_remit_to === 'broker' && (
+              <>
+                <div>
+                  <Label>Broker Name</Label>
+                  <Input value={form.broker_name} onChange={e => set('broker_name', e.target.value)} placeholder="Broker contact name" />
+                </div>
+                <div>
+                  <Label>Broker Email</Label>
+                  <Input type="email" value={form.broker_email} onChange={e => set('broker_email', e.target.value)} placeholder="broker@example.com" />
+                </div>
+              </>
+            )}
             <div className="sm:col-span-2">
               <Label>Notes</Label>
               <Textarea value={form.notes} onChange={e => set('notes', e.target.value)} rows={3} />

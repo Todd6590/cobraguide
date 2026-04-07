@@ -20,7 +20,7 @@ const defaultForm = {
   first_name: '', last_name: '', email: '', phone: '', ssn_last4: '',
   date_of_birth: '', address: '', city: '', state: '', zip: '',
   client_id: '', client_name: '', relationship: 'employee',
-  coverage_type: 'medical', cobra_status: 'pending_event',
+  coverage_type: 'medical', insurance_carriers: '', cobra_status: 'pending_event',
   cobra_start_date: '', cobra_end_date: '', monthly_premium: '', notes: '',
   // qualifying event fields (inline)
   event_type: '', event_date: '',
@@ -176,6 +176,23 @@ export default function BeneficiaryFormDialog({
             <div>
               <Label>Monthly Premium</Label>
               <Input type="number" step="0.01" value={form.monthly_premium} onChange={e => set('monthly_premium', e.target.value)} placeholder="$0.00" />
+            </div>
+            <div className="sm:col-span-2">
+              <Label>Current Insurance Carrier(s)</Label>
+              <Input
+                value={form.insurance_carriers}
+                onChange={e => set('insurance_carriers', e.target.value)}
+                placeholder={
+                  form.coverage_type === 'medical' ? 'e.g. Blue Cross Blue Shield' :
+                  form.coverage_type === 'dental' ? 'e.g. Delta Dental' :
+                  form.coverage_type === 'vision' ? 'e.g. VSP' :
+                  form.coverage_type === 'medical_dental' ? 'e.g. Medical: Aetna, Dental: Delta Dental' :
+                  form.coverage_type === 'medical_vision' ? 'e.g. Medical: United, Vision: VSP' :
+                  form.coverage_type === 'medical_dental_vision' ? 'e.g. Medical: Cigna, Dental: Guardian, Vision: VSP' :
+                  form.coverage_type === 'dental_vision' ? 'e.g. Dental: MetLife, Vision: EyeMed' :
+                  'Enter insurance carrier(s)'
+                }
+              />
             </div>
           </div>
 
