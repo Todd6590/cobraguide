@@ -5,9 +5,9 @@ const SubscriptionContext = createContext(null);
 
 export const PLANS = {
   trial:        { label: 'Free Trial',    clientLimit: 1,   beneficiaryLimit: 1, price: 'Free',    color: 'text-gray-600',    bg: 'bg-gray-50',    border: 'border-gray-200' },
-  starter:      { label: 'Starter',       clientLimit: 5,   beneficiaryLimit: 0, price: '$49/mo',  color: 'text-blue-600',    bg: 'bg-blue-50',    border: 'border-blue-200' },
-  professional: { label: 'Professional',  clientLimit: 25,  beneficiaryLimit: 0, price: '$99/mo',  color: 'text-violet-600',  bg: 'bg-violet-50',  border: 'border-violet-200' },
-  agency:       { label: 'Agency',        clientLimit: 0,   beneficiaryLimit: 0, price: '$199/mo', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200' },
+  starter:      { label: 'Starter',       clientLimit: 5,   beneficiaryLimit: 0, price: '$29/mo',  color: 'text-blue-600',    bg: 'bg-blue-50',    border: 'border-blue-200' },
+  professional: { label: 'Professional',  clientLimit: 25,  beneficiaryLimit: 0, price: '$69/mo',  color: 'text-violet-600',  bg: 'bg-violet-50',  border: 'border-violet-200' },
+  agency:       { label: 'Agency',        clientLimit: 0,   beneficiaryLimit: 0, price: '$99/mo',  color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200' },
 };
 
 const TRIAL_DAYS = 3;

@@ -2,9 +2,9 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 import Stripe from 'npm:stripe@14.21.0';
 
 const PRICE_IDS = {
-  starter:      'price_1TJjBDQGEvsOY1m3r0UczF7e',
-  professional: 'price_1TJjBDQGEvsOY1m3y41HmQBN',
-  agency:       'price_1TJjBDQGEvsOY1m3HXVousNt',
+  starter:      'price_1TJjEuQGEvsOY1m3h9HvKCvU',
+  professional: 'price_1TJjEuQGEvsOY1m3MFZjGvTm',
+  agency:       'price_1TJjEuQGEvsOY1m3p6IoDSdK',
 };
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'));
