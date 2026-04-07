@@ -1,0 +1,74 @@
+{
+  "name": "QualifyingEvent",
+  "type": "object",
+  "properties": {
+    "beneficiary_id": {
+      "type": "string",
+      "description": "Reference to Beneficiary"
+    },
+    "beneficiary_name": {
+      "type": "string",
+      "description": "Beneficiary full name for display"
+    },
+    "client_id": {
+      "type": "string",
+      "description": "Reference to Client"
+    },
+    "client_name": {
+      "type": "string",
+      "description": "Client company name for display"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "termination",
+        "reduction_in_hours",
+        "death_of_employee",
+        "divorce",
+        "medicare_entitlement",
+        "loss_of_dependent_status",
+        "employer_bankruptcy"
+      ],
+      "description": "Type of qualifying event"
+    },
+    "event_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "notification_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date employer notified administrator"
+    },
+    "coverage_loss_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date coverage would be lost"
+    },
+    "max_coverage_months": {
+      "type": "number",
+      "description": "Maximum months of COBRA coverage (18 or 36)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "reported",
+        "processing",
+        "notice_sent",
+        "election_pending",
+        "elected",
+        "declined",
+        "closed"
+      ],
+      "default": "reported"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "beneficiary_id",
+    "event_type",
+    "event_date"
+  ]
+}

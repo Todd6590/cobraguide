@@ -1,0 +1,70 @@
+{
+  "name": "Payment",
+  "type": "object",
+  "properties": {
+    "beneficiary_id": {
+      "type": "string"
+    },
+    "beneficiary_name": {
+      "type": "string"
+    },
+    "client_id": {
+      "type": "string"
+    },
+    "client_name": {
+      "type": "string"
+    },
+    "amount": {
+      "type": "number"
+    },
+    "period_start": {
+      "type": "string",
+      "format": "date",
+      "description": "Coverage period start"
+    },
+    "period_end": {
+      "type": "string",
+      "format": "date",
+      "description": "Coverage period end"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "received_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "received",
+        "late",
+        "missed",
+        "grace_period"
+      ],
+      "default": "pending"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "check",
+        "ach",
+        "credit_card",
+        "wire"
+      ],
+      "default": "check"
+    },
+    "reference_number": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "beneficiary_id",
+    "amount"
+  ]
+}

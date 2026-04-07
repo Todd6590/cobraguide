@@ -1,0 +1,74 @@
+{
+  "name": "CobraNotice",
+  "type": "object",
+  "properties": {
+    "beneficiary_id": {
+      "type": "string"
+    },
+    "beneficiary_name": {
+      "type": "string"
+    },
+    "client_id": {
+      "type": "string"
+    },
+    "client_name": {
+      "type": "string"
+    },
+    "qualifying_event_id": {
+      "type": "string"
+    },
+    "notice_type": {
+      "type": "string",
+      "enum": [
+        "general_rights",
+        "election",
+        "unavailability",
+        "early_termination",
+        "insufficient_payment",
+        "conversion"
+      ],
+      "description": "Type of COBRA notice"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Deadline for sending this notice"
+    },
+    "sent_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "delivery_method": {
+      "type": "string",
+      "enum": [
+        "first_class_mail",
+        "certified_mail",
+        "email",
+        "hand_delivered"
+      ],
+      "default": "first_class_mail"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "sent",
+        "overdue",
+        "completed"
+      ],
+      "default": "pending"
+    },
+    "election_deadline": {
+      "type": "string",
+      "format": "date",
+      "description": "60-day election deadline"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "beneficiary_id",
+    "notice_type"
+  ]
+}
