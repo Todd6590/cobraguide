@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, Search, MoreHorizontal, Pencil, Trash2, Mail, Loader2 } from 'lucide-react';
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, Mail, Loader2, Eye } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
 import { sendNoticeEmails } from '@/lib/noticeEmailService';
 import { Button } from '@/components/ui/button';
@@ -112,6 +113,11 @@ export default function Notices() {
                       <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="w-4 h-4" /></Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem asChild>
+                        <Link to={`/notices/${notice.id}`}>
+                          <Eye className="w-4 h-4 mr-2" /> View / Print
+                        </Link>
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => { setEditing(notice); setDialogOpen(true); }}>
                         <Pencil className="w-4 h-4 mr-2" /> Edit
                       </DropdownMenuItem>

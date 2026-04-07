@@ -183,11 +183,20 @@ ${client?.contact_phone || ''}
 
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
-  const user = await base44.auth.me();
-  if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { noticeId, adminEmail } = await req.json();
+  const body = await req.json();
+
+  // Support both direct call ({ noticeId }) and entity automation payload ({ event: { entity_id } })
+  let noticeId = body.noticeId;
+  let adminEmail = body.adminEmail;
+  if (!noticeId && body.event?.entity_id) {
+    noticeId = body.event.entity_id;
+  }
+
   if (!noticeId) return Response.json({ error: 'noticeId is required' }, { status: 400 });
+
+  // Auth: allow entity automation (no user) or authenticated users
+  const user = await base44.auth.me().catch(() => null);
 
   // Fetch all required records
   const [notices, beneficiaries, clients, events] = await Promise.all([
