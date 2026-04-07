@@ -25,6 +25,10 @@
       "type": "string",
       "format": "date",
       "description": "Date the trial started"
+    },
+    "stripe_subscription_id": {
+      "type": "string",
+      "description": "Stripe subscription ID after payment"
     }
   },
   "required": [

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useSubscription, PLANS } from '@/lib/SubscriptionContext';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -12,6 +12,15 @@ import { Upload, CheckCircle, Building2, Zap, Image } from 'lucide-react';
 export default function Settings() {
   const { plan, tenantSettings, isAgency, currentPlanInfo, user, refreshPlan, setTenantSettings } = useSubscription();
   const [upgradeOpen, setUpgradeOpen] = useState(false);
+
+  // Handle return from Stripe checkout
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('upgraded') === 'true') {
+      refreshPlan();
+      window.history.replaceState({}, '', '/settings');
+    }
+  }, []);
   const [companyName, setCompanyName] = useState(tenantSettings?.company_name || '');
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);

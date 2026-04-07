@@ -5,6 +5,7 @@ import { PLANS } from '@/lib/SubscriptionContext';
 import { base44 } from '@/api/base44Client';
 import { useState } from 'react';
 import { useSubscription } from '@/lib/SubscriptionContext';
+import { useToast } from '@/components/ui/use-toast';
 
 const PLAN_FEATURES = {
   trial:        ['1 client', '1 beneficiary', '3-day free trial', 'All COBRA tools'],
@@ -16,20 +17,36 @@ const PLAN_FEATURES = {
 export default function UpgradeDialog({ open, onOpenChange, currentTier, reason }) {
   const { plan, refreshPlan, isTrial, trialExpired, trialDaysRemaining } = useSubscription();
   const [upgrading, setUpgrading] = useState(null);
+  const { toast } = useToast();
 
   const tierOrder = ['starter', 'professional', 'agency'];
   const currentIndex = tierOrder.indexOf(currentTier || 'starter');
 
   const handleUpgrade = async (tier) => {
+    // Block checkout if running inside iframe (preview mode)
+    if (window.self !== window.top) {
+      toast({
+        title: 'Checkout not available in preview',
+        description: 'Please open your published app to complete payment.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setUpgrading(tier);
     try {
-      const limit = PLANS[tier].clientLimit;
-      await base44.entities.SubscriptionPlan.update(plan.id, {
-        plan_tier: tier,
-        client_limit: limit,
+      const origin = window.location.origin;
+      const response = await base44.functions.invoke('createCheckoutSession', {
+        tier,
+        successUrl: `${origin}/settings?upgraded=true`,
+        cancelUrl: `${origin}/settings`,
       });
-      refreshPlan();
-      onOpenChange(false);
+      if (response.data?.url) {
+        window.location.href = response.data.url;
+      }
+    } catch (err) {
+      console.error(err);
+      toast({ title: 'Error starting checkout', description: err.message, variant: 'destructive' });
     } finally {
       setUpgrading(null);
     }
