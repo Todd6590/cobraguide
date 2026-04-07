@@ -1,0 +1,28 @@
+{
+  "name": "SubscriptionPlan",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email of the user this plan belongs to"
+    },
+    "plan_tier": {
+      "type": "string",
+      "enum": [
+        "starter",
+        "professional",
+        "agency"
+      ],
+      "default": "starter",
+      "description": "Subscription tier"
+    },
+    "client_limit": {
+      "type": "number",
+      "description": "Max number of clients allowed (0 = unlimited)"
+    }
+  },
+  "required": [
+    "user_email",
+    "plan_tier"
+  ]
+}

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import PageHeader from '@/components/shared/PageHeader';
+import { useSubscription } from '@/lib/SubscriptionContext';
 import NoticeActivityReport from '@/components/reports/NoticeActivityReport';
 import PremiumCollectionReport from '@/components/reports/PremiumCollectionReport';
 import ParticipantHistoryReport from '@/components/reports/ParticipantHistoryReport';
@@ -49,6 +50,7 @@ const REPORT_TYPES = [
 export default function Reports() {
   const [activeReport, setActiveReport] = useState(null);
   const [clientFilter, setClientFilter] = useState('all');
+  const { tenantSettings, isAgency } = useSubscription();
 
   const { data: clients = [] } = useQuery({
     queryKey: ['clients'],
@@ -155,6 +157,13 @@ export default function Reports() {
         </div>
       )}
 
+      {/* Agency logo on reports */}
+      {activeReport && isAgency && tenantSettings?.logo_url && (
+        <div className="flex items-center gap-3 mb-4">
+          <img src={tenantSettings.logo_url} alt="Logo" className="h-10 object-contain" />
+          {tenantSettings?.company_name && <span className="font-semibold text-base">{tenantSettings.company_name}</span>}
+        </div>
+      )}
       {activeReport === 'notices' && <NoticeActivityReport data={filteredData} />}
       {activeReport === 'premiums' && <PremiumCollectionReport data={filteredData} />}
       {activeReport === 'participants' && <ParticipantHistoryReport data={filteredData} />}

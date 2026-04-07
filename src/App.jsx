@@ -4,6 +4,7 @@ import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
+import { SubscriptionProvider } from '@/lib/SubscriptionContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 
 import Layout from '@/components/Layout';
@@ -16,6 +17,7 @@ import Notices from '@/pages/Notices';
 import Payments from '@/pages/Payments';
 import NoticeDetail from '@/pages/NoticeDetail';
 import Reports from '@/pages/Reports';
+import Settings from '@/pages/Settings';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -49,6 +51,7 @@ const AuthenticatedApp = () => {
         <Route path="/payments" element={<Payments />} />
         <Route path="/notices/:id" element={<NoticeDetail />} />
         <Route path="/reports" element={<Reports />} />
+        <Route path="/settings" element={<Settings />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
@@ -59,10 +62,12 @@ function App() {
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
+        <SubscriptionProvider>
         <Router>
           <AuthenticatedApp />
         </Router>
         <Toaster />
+        </SubscriptionProvider>
       </QueryClientProvider>
     </AuthProvider>
   )

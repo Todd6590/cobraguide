@@ -1,11 +1,12 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Building2, Users, CalendarClock, 
-  Mail, DollarSign, Shield, ChevronLeft, ChevronRight, LogOut, BarChart2
+  Mail, DollarSign, Shield, ChevronLeft, ChevronRight, LogOut, BarChart2, Settings
 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { base44 } from '@/api/base44Client';
+import { useSubscription } from '@/lib/SubscriptionContext';
 
 const navItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -15,11 +16,13 @@ const navItems = [
   { path: '/notices', label: 'Notices', icon: Mail },
   { path: '/payments', label: 'Payments', icon: DollarSign },
   { path: '/reports', label: 'Employer Reports', icon: BarChart2 },
+  { path: '/settings', label: 'Settings', icon: Settings },
 ];
 
 export default function Layout() {
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
+  const { tenantSettings, isAgency } = useSubscription();
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -27,12 +30,18 @@ export default function Layout() {
       <aside className={`bg-sidebar text-sidebar-foreground flex flex-col transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'}`}>
         {/* Logo */}
         <div className="flex items-center gap-3 px-4 h-16 border-b border-sidebar-border">
-          <div className="w-8 h-8 rounded-lg bg-sidebar-primary flex items-center justify-center flex-shrink-0">
-            <Shield className="w-4 h-4 text-sidebar-primary-foreground" />
+          <div className="w-8 h-8 rounded-lg bg-sidebar-primary flex items-center justify-center flex-shrink-0 overflow-hidden">
+            {isAgency && tenantSettings?.logo_url ? (
+              <img src={tenantSettings.logo_url} alt="Logo" className="w-full h-full object-contain" />
+            ) : (
+              <Shield className="w-4 h-4 text-sidebar-primary-foreground" />
+            )}
           </div>
           {!collapsed && (
             <div className="overflow-hidden">
-              <h1 className="text-sm font-semibold tracking-tight text-sidebar-foreground">COBRA Admin</h1>
+              <h1 className="text-sm font-semibold tracking-tight text-sidebar-foreground">
+                {isAgency && tenantSettings?.company_name ? tenantSettings.company_name : 'COBRA Admin'}
+              </h1>
               <p className="text-[10px] text-sidebar-foreground/60">Benefits Administration</p>
             </div>
           )}

@@ -5,8 +5,10 @@ import StatCard from '@/components/dashboard/StatCard';
 import DeadlinesList from '@/components/dashboard/DeadlinesList';
 import RecentActivity from '@/components/dashboard/RecentActivity';
 import PageHeader from '@/components/shared/PageHeader';
+import { useSubscription } from '@/lib/SubscriptionContext';
 
 export default function Dashboard() {
+  const { tenantSettings, isAgency } = useSubscription();
   const { data: clients = [] } = useQuery({ queryKey: ['clients'], queryFn: () => base44.entities.Client.list() });
   const { data: beneficiaries = [] } = useQuery({ queryKey: ['beneficiaries'], queryFn: () => base44.entities.Beneficiary.list() });
   const { data: events = [] } = useQuery({ queryKey: ['events'], queryFn: () => base44.entities.QualifyingEvent.list() });
@@ -22,6 +24,12 @@ export default function Dashboard() {
 
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto">
+      {isAgency && tenantSettings?.logo_url && (
+        <div className="flex items-center gap-3 mb-4">
+          <img src={tenantSettings.logo_url} alt="Logo" className="h-10 object-contain" />
+          {tenantSettings?.company_name && <span className="text-lg font-semibold">{tenantSettings.company_name}</span>}
+        </div>
+      )}
       <PageHeader 
         title="Dashboard" 
         description="Overview of your COBRA administration activity"

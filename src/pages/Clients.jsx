@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, Search, MoreHorizontal, Pencil, Trash2, Building2 } from 'lucide-react';
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, Building2, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -10,13 +10,17 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import PageHeader from '@/components/shared/PageHeader';
 import StatusBadge from '@/components/shared/StatusBadge';
 import ClientFormDialog from '@/components/clients/ClientFormDialog';
+import UpgradeDialog from '@/components/subscription/UpgradeDialog';
 import { Link } from 'react-router-dom';
+import { useSubscription } from '@/lib/SubscriptionContext';
 
 export default function Clients() {
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const queryClient = useQueryClient();
+  const { clientLimit, plan } = useSubscription();
 
   const { data: clients = [], isLoading } = useQuery({ queryKey: ['clients'], queryFn: () => base44.entities.Client.list() });
 
@@ -41,15 +45,30 @@ export default function Clients() {
     c.contact_name?.toLowerCase().includes(search.toLowerCase())
   );
 
+  const atLimit = clientLimit > 0 && clients.length >= clientLimit;
+
+  const handleAddClient = () => {
+    if (atLimit) { setUpgradeOpen(true); return; }
+    setEditing(null);
+    setDialogOpen(true);
+  };
+
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto">
       <PageHeader
         title="Clients"
         description="Manage your client companies"
         actions={
-          <Button onClick={() => { setEditing(null); setDialogOpen(true); }}>
-            <Plus className="w-4 h-4 mr-2" /> Add Client
-          </Button>
+          <div className="flex items-center gap-2">
+            {atLimit && (
+              <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-3 py-1">
+                {clientLimit} client limit reached
+              </span>
+            )}
+            <Button onClick={handleAddClient} variant={atLimit ? 'outline' : 'default'}>
+              {atLimit ? <><Zap className="w-4 h-4 mr-2 text-amber-500" /> Upgrade to Add More</> : <><Plus className="w-4 h-4 mr-2" /> Add Client</>}
+            </Button>
+          </div>
         }
       />
 
@@ -128,6 +147,7 @@ export default function Clients() {
         onSave={(data) => saveMutation.mutate(data)}
         saving={saveMutation.isPending}
       />
+      <UpgradeDialog open={upgradeOpen} onOpenChange={setUpgradeOpen} currentTier={plan?.plan_tier} />
     </div>
   );
 }

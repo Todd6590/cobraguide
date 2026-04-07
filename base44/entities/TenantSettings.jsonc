@@ -1,0 +1,21 @@
+{
+  "name": "TenantSettings",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email of the user who owns these settings"
+    },
+    "logo_url": {
+      "type": "string",
+      "description": "URL of the uploaded company logo"
+    },
+    "company_name": {
+      "type": "string",
+      "description": "Custom company/brand name to display"
+    }
+  },
+  "required": [
+    "user_email"
+  ]
+}
