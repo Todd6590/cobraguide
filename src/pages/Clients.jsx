@@ -20,7 +20,7 @@ export default function Clients() {
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const queryClient = useQueryClient();
-  const { clientLimit, plan } = useSubscription();
+  const { clientLimit, plan, isTrial, trialExpired } = useSubscription();
 
   const { data: clients = [], isLoading } = useQuery({ queryKey: ['clients'], queryFn: () => base44.entities.Client.list() });
 
@@ -45,7 +45,7 @@ export default function Clients() {
     c.contact_name?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const atLimit = clientLimit > 0 && clients.length >= clientLimit;
+  const atLimit = trialExpired || (clientLimit > 0 && clients.length >= clientLimit);
 
   const handleAddClient = () => {
     if (atLimit) { setUpgradeOpen(true); return; }
@@ -147,7 +147,7 @@ export default function Clients() {
         onSave={(data) => saveMutation.mutate(data)}
         saving={saveMutation.isPending}
       />
-      <UpgradeDialog open={upgradeOpen} onOpenChange={setUpgradeOpen} currentTier={plan?.plan_tier} />
+      <UpgradeDialog open={upgradeOpen} onOpenChange={setUpgradeOpen} currentTier={isTrial ? 'trial' : plan?.plan_tier} />
     </div>
   );
 }

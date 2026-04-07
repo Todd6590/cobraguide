@@ -9,16 +9,22 @@
     "plan_tier": {
       "type": "string",
       "enum": [
+        "trial",
         "starter",
         "professional",
         "agency"
       ],
-      "default": "starter",
+      "default": "trial",
       "description": "Subscription tier"
     },
     "client_limit": {
       "type": "number",
       "description": "Max number of clients allowed (0 = unlimited)"
+    },
+    "trial_start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the trial started"
     }
   },
   "required": [

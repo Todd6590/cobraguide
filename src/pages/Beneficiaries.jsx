@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, Search, MoreHorizontal, Pencil, Trash2, FileText, Mail } from 'lucide-react';
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, FileText, Mail, Zap } from 'lucide-react';
+import { useSubscription } from '@/lib/SubscriptionContext';
+import UpgradeDialog from '@/components/subscription/UpgradeDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -18,10 +20,12 @@ import { sendNoticeEmails } from '@/lib/noticeEmailService';
 export default function Beneficiaries() {
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [generationStatus, setGenerationStatus] = useState(null); // { status, notices, errors }
+  const [generationStatus, setGenerationStatus] = useState(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { beneficiaryLimit, isTrial, trialExpired } = useSubscription();
 
   const { data: beneficiaries = [], isLoading } = useQuery({
     queryKey: ['beneficiaries'],
@@ -120,15 +124,30 @@ export default function Beneficiaries() {
     b.client_name?.toLowerCase().includes(search.toLowerCase())
   );
 
+  const atBeneficiaryLimit = beneficiaryLimit > 0 && beneficiaries.length >= beneficiaryLimit;
+
+  const handleAddBeneficiary = () => {
+    if (trialExpired || atBeneficiaryLimit) { setUpgradeOpen(true); return; }
+    setEditing(null);
+    setDialogOpen(true);
+  };
+
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto">
       <PageHeader
         title="Qualified Beneficiaries"
         description="Track all COBRA-eligible individuals"
         actions={
-          <Button onClick={() => { setEditing(null); setDialogOpen(true); }}>
-            <Plus className="w-4 h-4 mr-2" /> Add Beneficiary
-          </Button>
+          <div className="flex items-center gap-2">
+            {atBeneficiaryLimit && !trialExpired && (
+              <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-3 py-1">
+                {beneficiaryLimit} beneficiary limit reached
+              </span>
+            )}
+            <Button onClick={handleAddBeneficiary} variant={(atBeneficiaryLimit || trialExpired) ? 'outline' : 'default'}>
+              {(atBeneficiaryLimit || trialExpired) ? <><Zap className="w-4 h-4 mr-2 text-amber-500" /> Upgrade to Add More</> : <><Plus className="w-4 h-4 mr-2" /> Add Beneficiary</>}
+            </Button>
+          </div>
         }
       />
 
@@ -191,6 +210,7 @@ export default function Beneficiaries() {
         </Table>
       </Card>
 
+      <UpgradeDialog open={upgradeOpen} onOpenChange={setUpgradeOpen} currentTier={isTrial ? 'trial' : undefined} reason="beneficiary" />
       <BeneficiaryFormDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
