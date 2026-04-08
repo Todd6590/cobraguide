@@ -86,14 +86,21 @@ export default function Beneficiaries() {
           createdNotices.push(created);
         }
 
-        // Send emails for each new notice
+        // Send emails immediately only for the election notice.
+        // Conversion and early_termination notices are emailed automatically
+        // 15 days before their legal due date by a scheduled job.
         const emailResults = [];
         for (const notice of createdNotices) {
-          try {
-            const result = await sendNoticeEmails({ notice });
-            emailResults.push({ notice, ...result });
-          } catch (err) {
-            emailResults.push({ notice, adminSent: false, clientSent: false, error: err.message });
+          if (notice.notice_type === 'election') {
+            try {
+              const result = await sendNoticeEmails({ notice });
+              emailResults.push({ notice, ...result });
+            } catch (err) {
+              emailResults.push({ notice, adminSent: false, clientSent: false, error: err.message });
+            }
+          } else {
+            // Deferred — will be emailed 15 days before due date
+            emailResults.push({ notice, adminSent: false, clientSent: false, deferred: true });
           }
         }
 

@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Mail, FileText, AlertCircle } from 'lucide-react';
+import { CheckCircle, Mail, FileText, AlertCircle, Clock } from 'lucide-react';
 import { NOTICE_TYPE_LABELS } from '@/lib/cobraUtils';
 import { format } from 'date-fns';
 
@@ -43,14 +43,23 @@ export default function NoticeGenerationStatus({ status, onClose }) {
                 </div>
 
                 <div className="flex items-center gap-4 pl-6 text-xs">
-                  <span className={`flex items-center gap-1 ${adminSent ? 'text-emerald-600' : 'text-muted-foreground'}`}>
-                    <Mail className="w-3 h-3" />
-                    {adminSent ? 'Notice emailed to admin' : 'Admin email skipped'}
-                  </span>
-                  <span className={`flex items-center gap-1 ${clientSent ? 'text-emerald-600' : 'text-amber-600'}`}>
-                    <Mail className="w-3 h-3" />
-                    {clientSent ? 'Client notified' : 'No client email on file'}
-                  </span>
+                  {emailResults[idx]?.deferred ? (
+                    <span className="flex items-center gap-1 text-blue-600">
+                      <Clock className="w-3 h-3" />
+                      Will be emailed automatically 15 days before due date
+                    </span>
+                  ) : (
+                    <>
+                      <span className={`flex items-center gap-1 ${adminSent ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+                        <Mail className="w-3 h-3" />
+                        {adminSent ? 'Notice emailed to admin' : 'Admin email skipped'}
+                      </span>
+                      <span className={`flex items-center gap-1 ${clientSent ? 'text-emerald-600' : 'text-amber-600'}`}>
+                        <Mail className="w-3 h-3" />
+                        {clientSent ? 'Client notified' : 'No client email on file'}
+                      </span>
+                    </>
+                  )}
                 </div>
 
                 {error && (
@@ -63,9 +72,9 @@ export default function NoticeGenerationStatus({ status, onClose }) {
             ))}
 
             <p className="text-xs text-muted-foreground pt-1">
-              All notices have been saved and are visible on the Notices page. 
-              The admin email contains the full printable notice text. 
-              A separate notification was sent to the client contact.
+              All notices have been saved and are visible on the Notices page.
+              The Election Notice was emailed immediately. Conversion and Early Termination notices
+              will be emailed automatically 15 days before their legal due dates.
             </p>
           </div>
         )}
