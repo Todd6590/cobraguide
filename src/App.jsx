@@ -20,6 +20,7 @@ import Reports from '@/pages/Reports';
 import Settings from '@/pages/Settings';
 import GettingStarted from '@/pages/GettingStarted';
 import Contact from '@/pages/Contact';
+import Referrals from '@/pages/Referrals';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -56,6 +57,7 @@ const AuthenticatedApp = () => {
         <Route path="/settings" element={<Settings />} />
         <Route path="/getting-started" element={<GettingStarted />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/referrals" element={<Referrals />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

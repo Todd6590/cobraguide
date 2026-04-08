@@ -1,0 +1,46 @@
+{
+  "name": "Referral",
+  "type": "object",
+  "properties": {
+    "referrer_email": {
+      "type": "string",
+      "description": "Email of the user who referred"
+    },
+    "referral_code": {
+      "type": "string",
+      "description": "Unique referral code (slug of their email)"
+    },
+    "referred_email": {
+      "type": "string",
+      "description": "Email of the user who signed up via this referral"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "clicked",
+        "signed_up",
+        "converted"
+      ],
+      "default": "clicked",
+      "description": "clicked = visited link, signed_up = created account, converted = paid subscriber"
+    },
+    "reward_applied": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the free month reward has been applied to the referrer"
+    },
+    "stripe_coupon_id": {
+      "type": "string",
+      "description": "Stripe coupon ID applied as reward"
+    },
+    "converted_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the referred user converted to paid"
+    }
+  },
+  "required": [
+    "referrer_email",
+    "referral_code"
+  ]
+}

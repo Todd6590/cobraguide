@@ -48,6 +48,39 @@ Deno.serve(async (req) => {
           });
         }
         console.log(`Upgraded ${userEmail} to ${tier}`);
+
+        // Handle referral conversion reward
+        const referralCode = session.metadata?.referral_code;
+        if (referralCode) {
+          // Find open referral for this email + code
+          const referrals = await base44.asServiceRole.entities.Referral.filter({ referral_code: referralCode, referred_email: userEmail });
+          for (const referral of referrals) {
+            if (referral.status !== 'converted') {
+              await base44.asServiceRole.entities.Referral.update(referral.id, {
+                status: 'converted',
+                converted_date: new Date().toISOString().split('T')[0],
+              });
+
+              // Apply 1 free month coupon to the referrer
+              const referrerEmail = referral.referrer_email;
+              const customers = await stripe.customers.list({ email: referrerEmail, limit: 1 });
+              if (customers.data.length > 0) {
+                const coupon = await stripe.coupons.create({
+                  duration: 'once',
+                  percent_off: 100,
+                  name: 'Referral Reward - 1 Free Month',
+                  metadata: { referral_id: referral.id, referrer_email: referrerEmail }
+                });
+                await stripe.customers.update(customers.data[0].id, { coupon: coupon.id });
+                await base44.asServiceRole.entities.Referral.update(referral.id, {
+                  reward_applied: true,
+                  stripe_coupon_id: coupon.id,
+                });
+                console.log(`Referral reward applied: coupon ${coupon.id} → ${referrerEmail}`);
+              }
+            }
+          }
+        }
       }
     }
 

@@ -38,12 +38,17 @@ export default function UpgradeDialog({ open, onOpenChange, currentTier, reason 
     setUpgrading(tier);
     try {
       const origin = window.location.origin;
+      // Pick up referral code from URL or localStorage
+      const urlParams = new URLSearchParams(window.location.search);
+      const referralCode = urlParams.get('ref') || localStorage.getItem('referral_code') || undefined;
+
       const response = await base44.functions.invoke('createCheckoutSession', {
         tier,
         successUrl: `${origin}/settings?upgraded=true`,
         cancelUrl: `${origin}/settings`,
         discountCode: discountCode.trim() || undefined,
         userEmail: user?.email,
+        referralCode,
       });
       if (response.data?.url) {
         window.location.href = response.data.url;

@@ -11,7 +11,7 @@ const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'));
 Deno.serve(async (req) => {
   try {
     const body = await req.json();
-    const { tier, successUrl, cancelUrl, discountCode, userEmail } = body;
+    const { tier, successUrl, cancelUrl, discountCode, userEmail, referralCode } = body;
 
     if (!userEmail) {
       return Response.json({ error: 'User email is required' }, { status: 400 });
@@ -43,6 +43,7 @@ Deno.serve(async (req) => {
         base44_app_id: Deno.env.get('BASE44_APP_ID'),
         user_email: userEmail,
         plan_tier: tier,
+        ...(referralCode ? { referral_code: referralCode } : {}),
       },
     };
 

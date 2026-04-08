@@ -14,6 +14,12 @@ export const AuthProvider = ({ children }) => {
   const [appPublicSettings, setAppPublicSettings] = useState(null); // Contains only { id, public_settings }
 
   useEffect(() => {
+    // Capture referral code from URL and persist it
+    const urlParams = new URLSearchParams(window.location.search);
+    const ref = urlParams.get('ref');
+    if (ref) {
+      localStorage.setItem('referral_code', ref);
+    }
     checkAppState();
   }, []);
 
@@ -95,6 +101,19 @@ export const AuthProvider = ({ children }) => {
       setUser(currentUser);
       setIsAuthenticated(true);
       setIsLoadingAuth(false);
+
+      // If user arrived via referral link, record signed_up status
+      const storedRef = localStorage.getItem('referral_code');
+      if (storedRef && currentUser?.email) {
+        try {
+          await base44.functions.invoke('recordReferralSignup', {
+            referral_code: storedRef,
+            referred_email: currentUser.email,
+          });
+        } catch (e) {
+          // Non-critical, ignore
+        }
+      }
     } catch (error) {
       console.error('User auth check failed:', error);
       setIsLoadingAuth(false);
