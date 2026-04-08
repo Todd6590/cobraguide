@@ -6,28 +6,7 @@ const PRICE_IDS = {
   agency:       'price_1TJxKK9E4N4pWf6MUj8fTs2s',  // $99/mo
 };
 
-const DISCOUNT_CODES = {
-  'beardown2026': { tier: 'agency', percentOff: 100, name: 'BearDown2026 - Agency Free' },
-};
-
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'));
-
-async function getOrCreateCoupon(code, discount) {
-  const couponId = `discount_${code}`;
-  try {
-    return await stripe.coupons.retrieve(couponId);
-  } catch (err) {
-    if (err.statusCode === 404 || err.code === 'resource_missing') {
-      return await stripe.coupons.create({
-        id: couponId,
-        name: discount.name,
-        percent_off: discount.percentOff,
-        duration: 'forever',
-      });
-    }
-    throw err;
-  }
-}
 
 Deno.serve(async (req) => {
   try {
@@ -40,21 +19,17 @@ Deno.serve(async (req) => {
 
     console.log('Creating checkout for:', userEmail, 'tier:', tier);
 
-    let resolvedTier = tier;
-    let couponId = null;
+    let promotionCodeId = null;
 
     if (discountCode) {
-      const normalizedCode = discountCode.trim().toLowerCase();
-      const discount = DISCOUNT_CODES[normalizedCode];
-      if (!discount) {
+      const promoCodes = await stripe.promotionCodes.list({ code: discountCode.trim(), active: true, limit: 1 });
+      if (promoCodes.data.length === 0) {
         return Response.json({ error: 'Invalid discount code.' }, { status: 400 });
       }
-      resolvedTier = discount.tier;
-      const coupon = await getOrCreateCoupon(normalizedCode, discount);
-      couponId = coupon.id;
+      promotionCodeId = promoCodes.data[0].id;
     }
 
-    const priceId = PRICE_IDS[resolvedTier];
+    const priceId = PRICE_IDS[tier];
     if (!priceId) return Response.json({ error: 'Invalid plan tier' }, { status: 400 });
 
     const sessionParams = {
@@ -71,8 +46,8 @@ Deno.serve(async (req) => {
       },
     };
 
-    if (couponId) {
-      sessionParams.discounts = [{ coupon: couponId }];
+    if (promotionCodeId) {
+      sessionParams.discounts = [{ promotion_code: promotionCodeId }];
       // allow_promotion_codes is mutually exclusive with discounts
       delete sessionParams.allow_promotion_codes;
     }
