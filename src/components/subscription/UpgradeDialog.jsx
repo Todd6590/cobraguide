@@ -38,23 +38,23 @@ export default function UpgradeDialog({ open, onOpenChange, currentTier, reason 
     setUpgrading(tier);
     try {
       const origin = window.location.origin;
+      const successUrl = `${origin}/settings?upgraded=true`;
+      const cancelUrl = `${origin}/settings`;
+      console.log('Invoking checkout:', { tier, successUrl, cancelUrl, userEmail: user?.email });
       const response = await base44.functions.invoke('createCheckoutSession', {
         tier,
-        successUrl: `${origin}/settings?upgraded=true`,
-        cancelUrl: `${origin}/settings`,
+        successUrl,
+        cancelUrl,
         discountCode: discountCode.trim() || undefined,
         userEmail: user?.email,
       });
+      console.log('Checkout response:', response.data);
       if (response.data?.url) {
         window.location.href = response.data.url;
       }
     } catch (err) {
-      const detail = err.response?.data?.error || err.response?.data?.message || err.message || 'Unknown error';
-      const code = err.response?.data?.code || '';
-      const type = err.response?.data?.type || '';
-      const status = err.response?.status || '';
-      console.error('Checkout error:', { detail, code, type, status, full: err.response?.data });
-      alert(`DEBUG - Status: ${status} | Error: ${detail} | Code: ${code} | Type: ${type}`);
+      const detail = err.response?.data?.error || err.message;
+      console.error('Checkout error:', err.response?.data);
       toast({ title: 'Error starting checkout', description: detail, variant: 'destructive' });
     } finally {
       setUpgrading(null);
