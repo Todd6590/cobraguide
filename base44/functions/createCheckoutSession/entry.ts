@@ -96,7 +96,18 @@ Deno.serve(async (req) => {
 
     return Response.json({ url: session.url });
   } catch (error) {
-    console.error('Checkout session error:', error.message, error.statusCode, error.code, error.type);
-    return Response.json({ error: error.message, code: error.code, type: error.type }, { status: 500 });
+    console.error('CHECKOUT ERROR:', JSON.stringify({
+      message: error.message,
+      statusCode: error.statusCode,
+      code: error.code,
+      type: error.type,
+      raw: error.raw,
+    }));
+    return Response.json({ 
+      error: error.message || 'Unknown error', 
+      code: error.code, 
+      type: error.type,
+      statusCode: error.statusCode,
+    }, { status: 500 });
   }
 });
