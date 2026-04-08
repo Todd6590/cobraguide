@@ -38,17 +38,13 @@ export default function UpgradeDialog({ open, onOpenChange, currentTier, reason 
     setUpgrading(tier);
     try {
       const origin = window.location.origin;
-      const successUrl = `${origin}/settings?upgraded=true`;
-      const cancelUrl = `${origin}/settings`;
-      console.log('Invoking checkout:', { tier, successUrl, cancelUrl, userEmail: user?.email });
       const response = await base44.functions.invoke('createCheckoutSession', {
         tier,
-        successUrl,
-        cancelUrl,
+        successUrl: `${origin}/settings?upgraded=true`,
+        cancelUrl: `${origin}/settings`,
         discountCode: discountCode.trim() || undefined,
         userEmail: user?.email,
       });
-      console.log('Checkout response:', response.data);
       if (response.data?.url) {
         window.location.href = response.data.url;
       }
