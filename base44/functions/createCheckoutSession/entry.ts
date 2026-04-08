@@ -2,9 +2,9 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 import Stripe from 'npm:stripe@14.21.0';
 
 const PRICE_IDS = {
-  starter:      'price_1TJjEuQGEvsOY1m3h9HvKCvU',
-  professional: 'price_1TJjEuQGEvsOY1m3MFZjGvTm',
-  agency:       'price_1TJjEuQGEvsOY1m3p6IoDSdK',
+  starter:      'price_1TJxKE9E4N4pWf6MhTAyyqvF',  // $29/mo
+  professional: 'price_1TJxKD9E4N4pWf6MSbNXpWLO',  // $69/mo
+  agency:       'price_1TJxKK9E4N4pWf6MUj8fTs2s',  // $99/mo
 };
 
 // Discount codes that grant 100% off Agency tier (unlimited access)
