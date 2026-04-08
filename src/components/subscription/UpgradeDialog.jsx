@@ -1,6 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Zap, Clock } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { CheckCircle, Zap, Clock, Tag } from 'lucide-react';
 import { PLANS } from '@/lib/SubscriptionContext';
 import { base44 } from '@/api/base44Client';
 import { useState } from 'react';
@@ -17,6 +18,7 @@ const PLAN_FEATURES = {
 export default function UpgradeDialog({ open, onOpenChange, currentTier, reason }) {
   const { plan, refreshPlan, isTrial, trialExpired, trialDaysRemaining } = useSubscription();
   const [upgrading, setUpgrading] = useState(null);
+  const [discountCode, setDiscountCode] = useState('');
   const { toast } = useToast();
 
   const tierOrder = ['starter', 'professional', 'agency'];
@@ -40,6 +42,7 @@ export default function UpgradeDialog({ open, onOpenChange, currentTier, reason 
         tier,
         successUrl: `${origin}/settings?upgraded=true`,
         cancelUrl: `${origin}/settings`,
+        discountCode: discountCode.trim() || undefined,
       });
       if (response.data?.url) {
         window.location.href = response.data.url;
@@ -79,6 +82,16 @@ export default function UpgradeDialog({ open, onOpenChange, currentTier, reason 
               : `${trialDaysRemaining} day${trialDaysRemaining !== 1 ? 's' : ''} remaining in your free trial.`}
           </div>
         )}
+
+        <div className="flex items-center gap-2 mt-2">
+          <Tag className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+          <Input
+            placeholder="Have a discount code? Enter it here"
+            value={discountCode}
+            onChange={(e) => setDiscountCode(e.target.value)}
+            className="text-sm"
+          />
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
           {tierOrder.map((tier, idx) => {
