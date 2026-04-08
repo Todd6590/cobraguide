@@ -20,9 +20,12 @@ export default function Clients() {
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const queryClient = useQueryClient();
-  const { clientLimit, plan, isTrial, trialExpired } = useSubscription();
+  const { clientLimit, plan, isTrial, trialExpired, user } = useSubscription();
 
   const { data: clients = [], isLoading } = useQuery({ queryKey: ['clients'], queryFn: () => base44.entities.Client.list() });
+
+  // Only count records the current user created toward the limit (sample/demo data doesn't count)
+  const ownedClientCount = clients.filter(c => c.created_by === user?.email).length;
 
   const saveMutation = useMutation({
     mutationFn: (data) => editing
@@ -45,7 +48,7 @@ export default function Clients() {
     c.contact_name?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const atLimit = trialExpired || (clientLimit > 0 && clients.length >= clientLimit);
+  const atLimit = trialExpired || (clientLimit > 0 && ownedClientCount >= clientLimit);
 
   const handleAddClient = () => {
     if (atLimit) { setUpgradeOpen(true); return; }

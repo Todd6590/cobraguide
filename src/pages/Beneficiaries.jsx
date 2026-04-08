@@ -25,7 +25,7 @@ export default function Beneficiaries() {
   const [generationStatus, setGenerationStatus] = useState(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { beneficiaryLimit, isTrial, trialExpired } = useSubscription();
+  const { beneficiaryLimit, isTrial, trialExpired, user } = useSubscription();
 
   const { data: beneficiaries = [], isLoading } = useQuery({
     queryKey: ['beneficiaries'],
@@ -124,7 +124,9 @@ export default function Beneficiaries() {
     b.client_name?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const atBeneficiaryLimit = beneficiaryLimit > 0 && beneficiaries.length >= beneficiaryLimit;
+  // Only count records the current user created toward the limit (sample/demo data doesn't count)
+  const ownedBeneficiaryCount = beneficiaries.filter(b => b.created_by === user?.email).length;
+  const atBeneficiaryLimit = beneficiaryLimit > 0 && ownedBeneficiaryCount >= beneficiaryLimit;
 
   const handleAddBeneficiary = () => {
     if (trialExpired || atBeneficiaryLimit) { setUpgradeOpen(true); return; }
