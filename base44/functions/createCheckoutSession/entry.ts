@@ -63,6 +63,7 @@ Deno.serve(async (req) => {
       customer_email: userEmail,
       success_url: successUrl,
       cancel_url: cancelUrl,
+      allow_promotion_codes: true,
       metadata: {
         base44_app_id: Deno.env.get('BASE44_APP_ID'),
         user_email: userEmail,
@@ -72,6 +73,8 @@ Deno.serve(async (req) => {
 
     if (couponId) {
       sessionParams.discounts = [{ coupon: couponId }];
+      // allow_promotion_codes is mutually exclusive with discounts
+      delete sessionParams.allow_promotion_codes;
     }
 
     const session = await stripe.checkout.sessions.create(sessionParams);
