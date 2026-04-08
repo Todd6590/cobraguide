@@ -16,7 +16,7 @@ const PLAN_FEATURES = {
 };
 
 export default function UpgradeDialog({ open, onOpenChange, currentTier, reason }) {
-  const { plan, refreshPlan, isTrial, trialExpired, trialDaysRemaining } = useSubscription();
+  const { plan, refreshPlan, isTrial, trialExpired, trialDaysRemaining, user } = useSubscription();
   const [upgrading, setUpgrading] = useState(null);
   const [discountCode, setDiscountCode] = useState('');
   const { toast } = useToast();
@@ -43,6 +43,7 @@ export default function UpgradeDialog({ open, onOpenChange, currentTier, reason 
         successUrl: `${origin}/settings?upgraded=true`,
         cancelUrl: `${origin}/settings`,
         discountCode: discountCode.trim() || undefined,
+        userEmail: user?.email,
       });
       if (response.data?.url) {
         window.location.href = response.data.url;

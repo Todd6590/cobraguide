@@ -37,10 +37,24 @@ async function getOrCreateCoupon(code, discount) {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    
+    const body = await req.json();
+    const { tier, successUrl, cancelUrl, discountCode, userEmail } = body;
 
-    const { tier, successUrl, cancelUrl, discountCode } = await req.json();
+    let email = userEmail;
+    try {
+      const user = await base44.auth.me();
+      if (user) email = user.email;
+    } catch (authErr) {
+      console.error('Auth error:', authErr.message);
+    }
+
+    if (!email) {
+      console.error('No email available - auth failed and no userEmail provided');
+      return Response.json({ error: 'Unauthorized - could not identify user' }, { status: 401 });
+    }
+
+    console.log('Creating checkout for:', email, 'tier:', tier);
 
     // Validate discount code if provided
     let resolvedTier = tier;
@@ -64,12 +78,12 @@ Deno.serve(async (req) => {
     const sessionParams = {
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
-      customer_email: user.email,
+      customer_email: email,
       success_url: successUrl,
       cancel_url: cancelUrl,
       metadata: {
         base44_app_id: Deno.env.get('BASE44_APP_ID'),
-        user_email: user.email,
+        user_email: email,
         plan_tier: resolvedTier,
       },
     };
