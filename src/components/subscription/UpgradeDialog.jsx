@@ -49,8 +49,12 @@ export default function UpgradeDialog({ open, onOpenChange, currentTier, reason 
         window.location.href = response.data.url;
       }
     } catch (err) {
-      console.error('Checkout error full:', err, err.response?.data);
-      const detail = err.response?.data?.error || err.message;
+      const detail = err.response?.data?.error || err.response?.data?.message || err.message || 'Unknown error';
+      const code = err.response?.data?.code || '';
+      const type = err.response?.data?.type || '';
+      const status = err.response?.status || '';
+      console.error('Checkout error:', { detail, code, type, status, full: err.response?.data });
+      alert(`DEBUG - Status: ${status} | Error: ${detail} | Code: ${code} | Type: ${type}`);
       toast({ title: 'Error starting checkout', description: detail, variant: 'destructive' });
     } finally {
       setUpgrading(null);
