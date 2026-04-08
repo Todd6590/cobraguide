@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
 
     return Response.json({ url: session.url });
   } catch (error) {
-    console.error('Checkout session error:', error.message);
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error('Checkout session error:', error.message, error.statusCode, error.code, error.type);
+    return Response.json({ error: error.message, code: error.code, type: error.type }, { status: 500 });
   }
 });

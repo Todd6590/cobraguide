@@ -48,8 +48,9 @@ export default function UpgradeDialog({ open, onOpenChange, currentTier, reason 
         window.location.href = response.data.url;
       }
     } catch (err) {
-      console.error(err);
-      toast({ title: 'Error starting checkout', description: err.message, variant: 'destructive' });
+      console.error('Checkout error full:', err, err.response?.data);
+      const detail = err.response?.data?.error || err.message;
+      toast({ title: 'Error starting checkout', description: detail, variant: 'destructive' });
     } finally {
       setUpgrading(null);
     }
