@@ -19,14 +19,18 @@ const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'));
 async function getOrCreateCoupon(code, discount) {
   const couponId = `discount_${code}`;
   try {
-    return await stripe.coupons.retrieve(couponId);
-  } catch {
-    return await stripe.coupons.create({
-      id: couponId,
-      name: discount.name,
-      percent_off: discount.percentOff,
-      duration: 'forever',
-    });
+    const existing = await stripe.coupons.retrieve(couponId);
+    return existing;
+  } catch (err) {
+    if (err.statusCode === 404 || err.code === 'resource_missing') {
+      return await stripe.coupons.create({
+        id: couponId,
+        name: discount.name,
+        percent_off: discount.percentOff,
+        duration: 'forever',
+      });
+    }
+    throw err;
   }
 }
 
