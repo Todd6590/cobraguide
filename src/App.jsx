@@ -18,6 +18,8 @@ import Payments from '@/pages/Payments';
 import NoticeDetail from '@/pages/NoticeDetail';
 import Reports from '@/pages/Reports';
 import Settings from '@/pages/Settings';
+import GettingStarted from '@/pages/GettingStarted';
+import Contact from '@/pages/Contact';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -52,6 +54,8 @@ const AuthenticatedApp = () => {
         <Route path="/notices/:id" element={<NoticeDetail />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/getting-started" element={<GettingStarted />} />
+        <Route path="/contact" element={<Contact />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

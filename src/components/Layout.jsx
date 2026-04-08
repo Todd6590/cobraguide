@@ -1,7 +1,8 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Building2, Users, CalendarClock, 
-  Mail, DollarSign, Shield, ChevronLeft, ChevronRight, LogOut, BarChart2, Settings
+  Mail, DollarSign, Shield, ChevronLeft, ChevronRight, LogOut, BarChart2, Settings,
+  HelpCircle, BookOpen, MessageSquare
 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -73,6 +74,34 @@ export default function Layout() {
 
         {/* Collapse toggle */}
         <div className="p-2 border-t border-sidebar-border space-y-1">
+          {/* Help section */}
+          {!collapsed && (
+            <p className="px-3 pt-1 pb-0.5 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/40">Help</p>
+          )}
+          {[
+            { path: '/getting-started', label: 'Getting Started', icon: BookOpen },
+            { path: '/contact', label: 'Contact Us', icon: MessageSquare },
+          ].map((item) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all
+                  ${isActive
+                    ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-md'
+                    : 'text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                  }
+                `}
+              >
+                <item.icon className="w-4 h-4 flex-shrink-0" />
+                {!collapsed && <span>{item.label}</span>}
+              </Link>
+            );
+          })}
+
+          <div className="border-t border-sidebar-border my-1" />
+
           <button
             onClick={() => base44.auth.logout()}
             className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-sidebar-foreground/50 hover:text-sidebar-foreground/80 hover:bg-sidebar-accent transition-all w-full"
