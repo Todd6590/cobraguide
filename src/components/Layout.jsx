@@ -19,7 +19,6 @@ const navItems = [
   { path: '/payments', label: 'Payments', icon: DollarSign },
   { path: '/reports', label: 'Employer Reports', icon: BarChart2 },
   { path: '/cobra-eligibility', label: 'COBRA Eligibility Requirements', icon: ClipboardList },
-  { path: '/settings', label: 'Settings', icon: Settings },
 ];
 
 export default function Layout() {
@@ -83,6 +82,7 @@ export default function Layout() {
             { path: '/getting-started', label: 'Getting Started', icon: BookOpen },
             { path: '/referrals', label: 'Referrals', icon: Gift },
             { path: '/contact', label: 'Contact Us', icon: MessageSquare },
+            { path: '/settings', label: 'Settings', icon: Settings },
           ].map((item) => {
             const isActive = location.pathname === item.path;
             return (
