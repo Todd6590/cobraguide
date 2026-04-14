@@ -1,9 +1,9 @@
 import Stripe from 'npm:stripe@14.21.0';
 
 const PRICE_IDS = {
-  starter:      'price_1TJxKE9E4N4pWf6MhTAyyqvF',  // $29/mo
-  professional: 'price_1TJxKD9E4N4pWf6MSbNXpWLO',  // $69/mo
-  agency:       'price_1TJxKK9E4N4pWf6MUj8fTs2s',  // $99/mo
+  starter:      'price_1TMDhQ9E4N4pWf6Mys1q6VXG',  // $19/mo (sale)
+  professional: 'price_1TMDi19E4N4pWf6MhH7skcWm',  // $49/mo (sale)
+  agency:       'price_1TMDfv9E4N4pWf6MwO2cSWDt',  // $69/mo (sale)
 };
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'));

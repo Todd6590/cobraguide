@@ -8,6 +8,12 @@ import { useState } from 'react';
 import { useSubscription } from '@/lib/SubscriptionContext';
 import { useToast } from '@/components/ui/use-toast';
 
+const SALE_PRICES = {
+  starter:      { sale: '$19/mo', original: '$29/mo' },
+  professional: { sale: '$49/mo', original: '$69/mo' },
+  agency:       { sale: '$69/mo', original: '$99/mo' },
+};
+
 const PLAN_FEATURES = {
   trial:        ['1 client', '1 beneficiary', '3-day free trial', 'All COBRA tools'],
   starter:      ['Up to 5 clients', 'Unlimited beneficiaries', 'All COBRA tools', 'Notice management', 'Payment tracking', 'Reports'],
@@ -114,7 +120,11 @@ export default function UpgradeDialog({ open, onOpenChange, currentTier, reason 
               >
                 <div>
                   <p className={`text-xs font-bold uppercase tracking-widest ${info.color}`}>{info.label}</p>
-                  <p className="text-2xl font-bold mt-1">{info.price}</p>
+                  <div className="flex items-baseline gap-2 mt-1">
+                    <p className="text-2xl font-bold text-foreground">{SALE_PRICES[tier].sale}</p>
+                    <p className="text-sm text-muted-foreground line-through">{SALE_PRICES[tier].original}</p>
+                  </div>
+                  <p className="text-xs font-semibold text-emerald-600 mt-0.5">Limited-time offer!</p>
                   <p className="text-xs text-muted-foreground">{info.clientLimit === 0 ? 'Unlimited clients' : `Up to ${info.clientLimit} clients`}</p>
                 </div>
                 <ul className="space-y-1.5 flex-1">
