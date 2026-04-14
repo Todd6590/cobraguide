@@ -2,7 +2,7 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Building2, Users, CalendarClock, 
   Mail, DollarSign, Shield, ChevronLeft, ChevronRight, LogOut, BarChart2, Settings,
-  BookOpen, MessageSquare, Gift
+  BookOpen, MessageSquare, Gift, ClipboardList
 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,7 @@ const navItems = [
   { path: '/notices', label: 'Notices', icon: Mail },
   { path: '/payments', label: 'Payments', icon: DollarSign },
   { path: '/reports', label: 'Employer Reports', icon: BarChart2 },
+  { path: '/cobra-eligibility', label: 'COBRA Eligibility', icon: ClipboardList },
   { path: '/settings', label: 'Settings', icon: Settings },
 ];
 

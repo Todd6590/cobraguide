@@ -21,6 +21,7 @@ import Settings from '@/pages/Settings';
 import GettingStarted from '@/pages/GettingStarted';
 import Contact from '@/pages/Contact';
 import Referrals from '@/pages/Referrals';
+import CobraEligibility from '@/pages/CobraEligibility';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -58,6 +59,7 @@ const AuthenticatedApp = () => {
         <Route path="/getting-started" element={<GettingStarted />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/referrals" element={<Referrals />} />
+        <Route path="/cobra-eligibility" element={<CobraEligibility />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
