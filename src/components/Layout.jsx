@@ -18,7 +18,7 @@ const navItems = [
   { path: '/notices', label: 'Notices', icon: Mail },
   { path: '/payments', label: 'Payments', icon: DollarSign },
   { path: '/reports', label: 'Employer Reports', icon: BarChart2 },
-  { path: '/cobra-eligibility', label: 'COBRA Eligibility', icon: ClipboardList },
+  { path: '/cobra-eligibility', label: 'COBRA Eligibility Requirements', icon: ClipboardList },
   { path: '/settings', label: 'Settings', icon: Settings },
 ];
 
