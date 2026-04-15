@@ -28,26 +28,36 @@ Deno.serve(async (req) => {
       const session = event.data.object;
       const userEmail = session.metadata?.user_email;
       const tier = session.metadata?.plan_tier;
+      const isStudyGroup = session.metadata?.is_study_group_promo === 'true';
 
       if (userEmail && tier && PLAN_LIMITS[tier]) {
         const plans = await base44.asServiceRole.entities.SubscriptionPlan.filter({ user_email: userEmail });
         const limits = PLAN_LIMITS[tier];
 
+        const trialStart = new Date();
+        const trialEnd = new Date(trialStart);
+        trialEnd.setDate(trialEnd.getDate() + 7);
+        const fmtDate = (d) => d.toISOString().split('T')[0];
+
+        const updateData = {
+          plan_tier: tier,
+          client_limit: limits.clientLimit,
+          stripe_subscription_id: session.subscription,
+          ...(isStudyGroup ? {
+            is_study_group: true,
+            study_group_trial_start: fmtDate(trialStart),
+            study_group_trial_end: fmtDate(trialEnd),
+            study_group_expired: false,
+            day6_email_sent: false,
+          } : {}),
+        };
+
         if (plans.length > 0) {
-          await base44.asServiceRole.entities.SubscriptionPlan.update(plans[0].id, {
-            plan_tier: tier,
-            client_limit: limits.clientLimit,
-            stripe_subscription_id: session.subscription,
-          });
+          await base44.asServiceRole.entities.SubscriptionPlan.update(plans[0].id, updateData);
         } else {
-          await base44.asServiceRole.entities.SubscriptionPlan.create({
-            user_email: userEmail,
-            plan_tier: tier,
-            client_limit: limits.clientLimit,
-            stripe_subscription_id: session.subscription,
-          });
+          await base44.asServiceRole.entities.SubscriptionPlan.create({ user_email: userEmail, ...updateData });
         }
-        console.log(`Upgraded ${userEmail} to ${tier}`);
+        console.log(`Upgraded ${userEmail} to ${tier}${isStudyGroup ? ' (StudyGroup trial)' : ''}`);
 
         // Handle referral conversion reward
         const referralCode = session.metadata?.referral_code;
@@ -84,10 +94,21 @@ Deno.serve(async (req) => {
       }
     }
 
-    if (event.type === 'customer.subscription.deleted') {
+    if (event.type === 'customer.subscription.deleted' || event.type === 'customer.subscription.updated') {
       const subscription = event.data.object;
-      // Find plan by subscription ID and downgrade to trial
-      console.log('Subscription cancelled:', subscription.id);
+      // If a StudyGroup trial ended without payment method, mark as expired
+      if (subscription.status === 'canceled' || (subscription.status === 'past_due' && subscription.trial_end)) {
+        const plans = await base44.asServiceRole.entities.SubscriptionPlan.filter({ stripe_subscription_id: subscription.id });
+        for (const p of plans) {
+          if (p.is_study_group) {
+            await base44.asServiceRole.entities.SubscriptionPlan.update(p.id, {
+              plan_tier: 'trial',
+              study_group_expired: true,
+            });
+            console.log(`StudyGroup trial expired for ${p.user_email}`);
+          }
+        }
+      }
     }
 
     return Response.json({ received: true });

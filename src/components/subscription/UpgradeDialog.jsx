@@ -21,7 +21,7 @@ const PLAN_FEATURES = {
   agency:       ['Unlimited clients', 'All Professional features', 'Custom logo & white-labeling', 'Reports with your branding'],
 };
 
-export default function UpgradeDialog({ open, onOpenChange, currentTier, reason }) {
+export default function UpgradeDialog({ open, onOpenChange, currentTier, reason, isStudyGroupExpired }) {
   const { plan, refreshPlan, isTrial, trialExpired, trialDaysRemaining, user } = useSubscription();
   const [upgrading, setUpgrading] = useState(null);
   const [discountCode, setDiscountCode] = useState('');
@@ -68,18 +68,24 @@ export default function UpgradeDialog({ open, onOpenChange, currentTier, reason 
     }
   };
 
-  const description = trialExpired
+  const description = isStudyGroupExpired
+    ? 'Your 7-day StudyGroup Agency trial has ended. Select a plan below to continue.'
+    : trialExpired
     ? 'Your 3-day free trial has ended. Choose a plan to continue.'
     : reason === 'beneficiary'
     ? 'You\'ve reached your trial limit of 1 beneficiary. Upgrade to add more.'
     : 'You\'ve reached your trial limit of 1 client. Upgrade to add more.';
 
+  const isBlocking = trialExpired || isStudyGroupExpired;
+
   return (
-    <Dialog open={open} onOpenChange={trialExpired ? undefined : onOpenChange}>
-      <DialogContent className={`max-w-3xl ${trialExpired ? '[&>button]:hidden' : ''}`}>
+    <Dialog open={open} onOpenChange={isBlocking ? undefined : onOpenChange}>
+      <DialogContent className={`max-w-3xl ${isBlocking ? '[&>button]:hidden' : ''}`}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
-            {trialExpired
+            {isStudyGroupExpired
+              ? <><Clock className="w-5 h-5 text-red-500" /> Your StudyGroup Trial Has Ended</>
+              : trialExpired
               ? <><Clock className="w-5 h-5 text-red-500" /> Your Trial Has Ended</>
               : <><Zap className="w-5 h-5 text-amber-500" /> Upgrade Your Plan</>
             }
@@ -109,8 +115,8 @@ export default function UpgradeDialog({ open, onOpenChange, currentTier, reason 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
           {tierOrder.map((tier, idx) => {
             const info = PLANS[tier];
-            const isCurrent = !isTrial && tier === currentTier;
-            const isUpgrade = isTrial || idx > currentIndex;
+            const isCurrent = !isTrial && !isStudyGroupExpired && tier === currentTier;
+            const isUpgrade = isTrial || isStudyGroupExpired || idx > currentIndex;
             return (
               <div
                 key={tier}

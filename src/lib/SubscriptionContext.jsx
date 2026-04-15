@@ -51,8 +51,25 @@ export function SubscriptionProvider({ children }) {
 
   const isTrial = plan?.plan_tier === 'trial';
 
+  // StudyGroup trial: 7-day agency trial, expired when study_group_expired is true OR past trial_end date
+  const isStudyGroupTrial = !!plan?.is_study_group && !plan?.study_group_expired && plan?.plan_tier === 'agency';
+  const studyGroupExpired = (() => {
+    if (!plan?.is_study_group) return false;
+    if (plan?.study_group_expired) return true;
+    if (!plan?.study_group_trial_end) return false;
+    return new Date() > new Date(plan.study_group_trial_end);
+  })();
+
+  const studyGroupDaysRemaining = (() => {
+    if (!isStudyGroupTrial || !plan?.study_group_trial_end) return null;
+    const end = new Date(plan.study_group_trial_end);
+    const now = new Date();
+    return Math.max(0, Math.ceil((end - now) / (1000 * 60 * 60 * 24)));
+  })();
+
   // Check if trial has expired
   const trialExpired = (() => {
+    if (studyGroupExpired) return true;
     if (!isTrial || !plan?.trial_start_date) return false;
     const start = new Date(plan.trial_start_date);
     const now = new Date();
@@ -62,6 +79,7 @@ export function SubscriptionProvider({ children }) {
 
   // Days remaining in trial
   const trialDaysRemaining = (() => {
+    if (isStudyGroupTrial) return studyGroupDaysRemaining;
     if (!isTrial || !plan?.trial_start_date) return null;
     const start = new Date(plan.trial_start_date);
     const now = new Date();
@@ -81,6 +99,7 @@ export function SubscriptionProvider({ children }) {
       plan, tenantSettings, loading, user,
       clientLimit, beneficiaryLimit,
       isAgency, isTrial, trialExpired, trialDaysRemaining,
+      isStudyGroupTrial, studyGroupExpired, studyGroupDaysRemaining,
       currentPlanInfo, refreshPlan, setTenantSettings
     }}>
       {children}

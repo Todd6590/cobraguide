@@ -47,11 +47,12 @@ Deno.serve(async (req) => {
       },
     };
 
-    // StudyGroup promo: override to Agency tier with 7-day free trial
+    // StudyGroup promo: override to Agency tier with 7-day free trial, no credit card required
     const isStudyGroup = discountCode && discountCode.trim().toLowerCase() === 'studygroup';
     if (isStudyGroup) {
       sessionParams.line_items = [{ price: PRICE_IDS['agency'], quantity: 1 }];
       sessionParams.subscription_data = { trial_period_days: 7 };
+      sessionParams.payment_method_collection = 'if_required';
       sessionParams.metadata.plan_tier = 'agency';
       sessionParams.metadata.is_study_group_promo = 'true';
       delete sessionParams.allow_promotion_codes;

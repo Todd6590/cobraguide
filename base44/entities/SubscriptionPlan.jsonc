@@ -29,6 +29,31 @@
     "stripe_subscription_id": {
       "type": "string",
       "description": "Stripe subscription ID after payment"
+    },
+    "is_study_group": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this was a StudyGroup promo trial"
+    },
+    "study_group_trial_start": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the StudyGroup 7-day trial started"
+    },
+    "study_group_trial_end": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the StudyGroup trial ends (day 7)"
+    },
+    "study_group_expired": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the StudyGroup trial has expired and user needs to pick a plan"
+    },
+    "day6_email_sent": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the day-6 reminder email has been sent"
     }
   },
   "required": [
