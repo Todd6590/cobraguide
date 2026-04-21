@@ -61,6 +61,8 @@ Deno.serve(async (req) => {
       sessionParams.discounts = [{ promotion_code: promotionCodeId }];
       // allow_promotion_codes is mutually exclusive with discounts
       delete sessionParams.allow_promotion_codes;
+      // Don't require payment info when a promo code is used
+      sessionParams.payment_method_collection = 'if_required';
     }
 
     const session = await stripe.checkout.sessions.create(sessionParams);
