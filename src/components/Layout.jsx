@@ -32,17 +32,17 @@ export default function Layout() {
       <aside className={`bg-sidebar text-sidebar-foreground flex flex-col transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'}`}>
         {/* Logo */}
         <div className="flex items-center gap-3 px-4 h-16 border-b border-sidebar-border">
-          <div className="w-8 h-8 rounded-lg bg-sidebar-primary flex items-center justify-center flex-shrink-0 overflow-hidden">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
             {isAgency && tenantSettings?.logo_url ? (
               <img src={tenantSettings.logo_url} alt="Logo" className="w-full h-full object-contain" />
             ) : (
-              <Shield className="w-4 h-4 text-sidebar-primary-foreground" />
+              <img src="https://media.base44.com/images/public/69d54be4c2cc9594e999e9ca/f03013bba_COBRAShieldProLogo-TransparentBackground.png" alt="COBRA Shield Pro" className="w-full h-full object-contain" />
             )}
           </div>
           {!collapsed && (
             <div className="overflow-hidden">
               <h1 className="text-sm font-semibold tracking-tight text-sidebar-foreground">
-                {isAgency && tenantSettings?.company_name ? tenantSettings.company_name : 'COBRA Admin'}
+                {isAgency && tenantSettings?.company_name ? tenantSettings.company_name : 'COBRA Shield Pro'}
               </h1>
               <p className="text-[10px] text-sidebar-foreground/60">Benefits Administration</p>
             </div>
