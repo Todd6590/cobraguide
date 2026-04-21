@@ -32,7 +32,7 @@ export default function Layout() {
       <aside className={`bg-sidebar text-sidebar-foreground flex flex-col transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'}`}>
         {/* Logo */}
         <div className="flex items-center gap-3 px-4 h-16 border-b border-sidebar-border">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+          <div className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
             {isAgency && tenantSettings?.logo_url ? (
               <img src={tenantSettings.logo_url} alt="Logo" className="w-full h-full object-contain" />
             ) : (
