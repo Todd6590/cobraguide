@@ -4,11 +4,11 @@
   "properties": {
     "referrer_email": {
       "type": "string",
-      "description": "Email of the user who referred"
+      "description": "Email of the affiliate who referred"
     },
     "referral_code": {
       "type": "string",
-      "description": "Unique referral code (slug of their email)"
+      "description": "Unique referral/affiliate code"
     },
     "referred_email": {
       "type": "string",
@@ -27,7 +27,7 @@
     "reward_applied": {
       "type": "boolean",
       "default": false,
-      "description": "Whether the free month reward has been applied to the referrer"
+      "description": "Whether the legacy free month reward has been applied"
     },
     "stripe_coupon_id": {
       "type": "string",
@@ -37,6 +37,68 @@
       "type": "string",
       "format": "date",
       "description": "Date the referred user converted to paid"
+    },
+    "plan_tier": {
+      "type": "string",
+      "description": "Plan tier the referred user subscribed to"
+    },
+    "subscription_amount": {
+      "type": "number",
+      "description": "Monthly subscription amount in dollars at time of conversion"
+    },
+    "commission_rate": {
+      "type": "number",
+      "default": 0.2,
+      "description": "Commission rate (0.20 = 20%)"
+    },
+    "commission_amount": {
+      "type": "number",
+      "description": "Commission amount in dollars for this referral"
+    },
+    "total_commission_earned": {
+      "type": "number",
+      "default": 0,
+      "description": "Cumulative commission earned across all invoices for this referral"
+    },
+    "commission_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "paid",
+        "cancelled"
+      ],
+      "default": "pending",
+      "description": "Current payout status of the commission"
+    },
+    "last_invoice_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of the most recent invoice that earned commission"
+    },
+    "payout_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the commission was paid out"
+    },
+    "payout_method": {
+      "type": "string",
+      "enum": [
+        "paypal",
+        "bank_transfer",
+        "check",
+        "stripe",
+        "other"
+      ],
+      "description": "How the affiliate was paid"
+    },
+    "payout_reference": {
+      "type": "string",
+      "description": "Payment reference or transaction ID"
+    },
+    "affiliate_notes": {
+      "type": "string",
+      "description": "Admin notes about this affiliate/referral"
     }
   },
   "required": [
