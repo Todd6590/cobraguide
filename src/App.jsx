@@ -22,6 +22,7 @@ import GettingStarted from '@/pages/GettingStarted';
 import Contact from '@/pages/Contact';
 import Referrals from '@/pages/Referrals';
 import CobraEligibility from '@/pages/CobraEligibility';
+import Home from '@/pages/Home';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -38,13 +39,15 @@ const AuthenticatedApp = () => {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
     } else if (authError.type === 'auth_required') {
-      navigateToLogin();
+      // Redirect unauthenticated users to the home/landing page
+      window.location.href = '/home';
       return null;
     }
   }
 
   return (
     <Routes>
+      <Route path="/home" element={<Home />} />
       <Route element={<Layout />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/clients" element={<Clients />} />
