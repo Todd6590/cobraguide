@@ -24,6 +24,7 @@ import Referrals from '@/pages/Referrals';
 import AffiliateProgram from '@/pages/AffiliateProgram';
 import CobraEligibility from '@/pages/CobraEligibility';
 import Home from '@/pages/Home';
+import SignIn from '@/pages/SignIn';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, isAuthenticated } = useAuth();
@@ -44,6 +45,7 @@ const AuthenticatedApp = () => {
   if (!isAuthenticated) {
     return (
       <Routes>
+        <Route path="/signin" element={<SignIn />} />
         <Route path="*" element={<Home />} />
       </Routes>
     );
