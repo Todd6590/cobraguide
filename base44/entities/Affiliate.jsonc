@@ -28,13 +28,22 @@
       "type": "string",
       "description": "Unique referral code assigned upon approval"
     },
+    "stripe_account_id": {
+      "type": "string",
+      "description": "Stripe Connect account ID (acct_xxx)"
+    },
+    "stripe_onboarding_complete": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the affiliate has completed Stripe Connect onboarding"
+    },
     "payout_method": {
       "type": "string",
       "enum": [
+        "stripe_connect",
         "paypal",
         "bank_transfer",
         "check",
-        "stripe",
         "other"
       ],
       "description": "Preferred payout method"

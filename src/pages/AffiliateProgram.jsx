@@ -1,15 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useSubscription } from '@/lib/SubscriptionContext';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { DollarSign, TrendingUp, Award, Users, CheckCircle2, MoreHorizontal } from 'lucide-react';
+import { DollarSign, TrendingUp, Award, Users, CheckCircle2, MoreHorizontal, ExternalLink, AlertCircle, Zap } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/components/ui/use-toast';
 import PageHeader from '@/components/shared/PageHeader';
 
@@ -26,6 +25,120 @@ const statusColors = {
   converted: 'bg-emerald-50 text-emerald-700',
 };
 
+// ─── Stripe Connect Banner ──────────────────────────────────────────────────
+function StripeConnectBanner({ affiliate, onConnectSuccess }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [connecting, setConnecting] = useState(false);
+  const [checking, setChecking] = useState(false);
+
+  // Check status after returning from Stripe
+  const location = useLocation();
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const connect = params.get('connect');
+    if (connect === 'success') {
+      checkStatus();
+    } else if (connect === 'refresh') {
+      handleConnect('refresh_link');
+    }
+  }, []);
+
+  const checkStatus = async () => {
+    if (!affiliate?.stripe_account_id) return;
+    setChecking(true);
+    try {
+      const res = await base44.functions.invoke('stripeConnectOnboard', { action: 'check_status' });
+      if (res.data.complete) {
+        queryClient.invalidateQueries({ queryKey: ['myAffiliate'] });
+        onConnectSuccess?.();
+        toast({ title: '🎉 Stripe account connected! You\'re ready to receive automated payouts.' });
+      } else {
+        toast({ title: 'Stripe setup incomplete', description: 'Please complete all required fields in Stripe.', variant: 'destructive' });
+      }
+    } catch (err) {
+      toast({ title: 'Could not verify status', variant: 'destructive' });
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  const handleConnect = async (action = 'create_account') => {
+    setConnecting(true);
+    try {
+      const res = await base44.functions.invoke('stripeConnectOnboard', { action });
+      if (res.data.url) {
+        window.location.href = res.data.url;
+      }
+    } catch (err) {
+      toast({ title: 'Failed to start Stripe onboarding', description: err.message, variant: 'destructive' });
+      setConnecting(false);
+    }
+  };
+
+  if (affiliate?.stripe_onboarding_complete) {
+    return (
+      <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl px-5 py-4 text-emerald-800">
+        <CheckCircle2 className="w-5 h-5 flex-shrink-0 text-emerald-600" />
+        <div className="flex-1">
+          <p className="font-semibold text-sm">Stripe account connected</p>
+          <p className="text-sm text-emerald-700">Your commissions will be transferred automatically to your Stripe account after each subscriber payment.</p>
+        </div>
+        <Button variant="outline" size="sm" onClick={checkStatus} disabled={checking} className="flex-shrink-0 border-emerald-300 text-emerald-700 hover:bg-emerald-100">
+          {checking ? 'Checking…' : 'Verify'}
+        </Button>
+      </div>
+    );
+  }
+
+  if (affiliate?.stripe_account_id && !affiliate?.stripe_onboarding_complete) {
+    return (
+      <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-5 py-4 text-amber-800">
+        <AlertCircle className="w-5 h-5 flex-shrink-0 text-amber-600" />
+        <div className="flex-1">
+          <p className="font-semibold text-sm">Stripe setup incomplete</p>
+          <p className="text-sm text-amber-700">You started Stripe onboarding but didn't finish. Complete it to receive automatic payouts.</p>
+        </div>
+        <Button size="sm" onClick={() => handleConnect('refresh_link')} disabled={connecting} className="flex-shrink-0 bg-amber-600 hover:bg-amber-700 text-white">
+          {connecting ? 'Loading…' : 'Resume Setup'}
+        </Button>
+      </div>
+    );
+  }
+
+  // No stripe account yet
+  if (affiliate?.status !== 'approved') {
+    return (
+      <div className="flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-xl px-5 py-4 text-blue-800">
+        <Zap className="w-5 h-5 flex-shrink-0 text-blue-600" />
+        <div>
+          <p className="font-semibold text-sm">Connect your Stripe account to receive payouts</p>
+          <p className="text-sm text-blue-700">Once your application is approved, you'll be able to connect your Stripe account and receive automatic commission payments.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-start sm:items-center gap-4 bg-violet-50 border border-violet-200 rounded-xl px-5 py-5 text-violet-900 flex-col sm:flex-row">
+      <div className="flex items-start gap-3 flex-1">
+        <Zap className="w-5 h-5 flex-shrink-0 text-violet-600 mt-0.5" />
+        <div>
+          <p className="font-semibold text-sm">Connect your Stripe account to receive automatic payouts</p>
+          <p className="text-sm text-violet-700 mt-0.5">
+            Commissions are transferred directly to your Stripe account after each subscriber payment — no waiting, no manual requests.
+          </p>
+        </div>
+      </div>
+      <Button onClick={() => handleConnect('create_account')} disabled={connecting} className="flex-shrink-0 bg-violet-600 hover:bg-violet-700 text-white gap-2">
+        <ExternalLink className="w-4 h-4" />
+        {connecting ? 'Loading…' : 'Connect Stripe'}
+      </Button>
+    </div>
+  );
+}
+
+// ─── Main Page ──────────────────────────────────────────────────────────────
 export default function AffiliateProgram() {
   const { user } = useSubscription();
   const { toast } = useToast();
@@ -37,7 +150,7 @@ export default function AffiliateProgram() {
   const [adminTab, setAdminTab] = useState('pending');
 
   // Check if this user already has an affiliate record
-  const { data: myAffiliate } = useQuery({
+  const { data: myAffiliate, refetch: refetchMyAffiliate } = useQuery({
     queryKey: ['myAffiliate', user?.email],
     queryFn: async () => {
       const results = await base44.entities.Affiliate.filter({ user_email: user?.email });
@@ -77,7 +190,6 @@ export default function AffiliateProgram() {
     }
     setSubmitting(true);
     try {
-      // Save to database
       await base44.entities.Affiliate.create({
         full_name: form.name,
         email: form.email,
@@ -85,7 +197,6 @@ export default function AffiliateProgram() {
         status: 'pending',
         referral_code: (user?.email || form.email).toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_'),
       });
-      // Send notification email
       await base44.integrations.Core.SendEmail({
         to: 'help@cobrashieldpro.com',
         subject: '🎉 New Affiliate Program Application',
@@ -115,7 +226,6 @@ export default function AffiliateProgram() {
 
   // Admin stats
   const adminConverted = allReferrals.filter(r => r.status === 'converted');
-  const adminTotalCommissions = adminConverted.reduce((sum, r) => sum + (r.total_commission_earned || 0), 0);
   const adminPendingPayout = adminConverted.filter(r => r.commission_status !== 'paid').reduce((sum, r) => sum + (r.total_commission_earned || 0), 0);
   const adminPaidOut = adminConverted.filter(r => r.commission_status === 'paid').reduce((sum, r) => sum + (r.total_commission_earned || 0), 0);
 
@@ -129,7 +239,7 @@ export default function AffiliateProgram() {
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       <PageHeader
         title="Affiliate Program"
-        description="Earn 20% commission on every subscription payment from users you refer — paid automatically through Stripe."
+        description="Earn 20% commission on every subscription payment from users you refer — transferred automatically to your Stripe account."
       />
 
       {/* Apply section */}
@@ -140,7 +250,7 @@ export default function AffiliateProgram() {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Fill out the form below to apply. Once approved, you'll receive your unique affiliate link and start earning commissions.
+              Fill out the form below to apply. Once approved, you'll connect your Stripe account and start receiving automatic commission payments.
             </p>
             <form onSubmit={handleApply} className="space-y-4 max-w-sm">
               <div className="space-y-1.5">
@@ -169,29 +279,32 @@ export default function AffiliateProgram() {
               </Button>
             </form>
 
-            {/* Commission info */}
             <div className="mt-2 bg-blue-50 border border-blue-100 rounded-lg p-4 text-sm text-blue-800 space-y-1">
               <p className="font-semibold">How commissions work:</p>
               <ul className="list-disc ml-4 space-y-0.5 text-blue-700">
                 <li>Starter plan ($19/mo) → you earn <strong>$3.80/mo</strong></li>
                 <li>Professional plan ($49/mo) → you earn <strong>$9.80/mo</strong></li>
                 <li>Agency plan ($69/mo) → you earn <strong>$13.80/mo</strong></li>
-                <li>Commissions are paid automatically through Stripe.</li>
+                <li>Commissions are transferred automatically to your Stripe account after each payment.</li>
               </ul>
             </div>
           </CardContent>
         </Card>
       ) : (
         <>
-          {/* Submitted / approved state */}
-          {submitted && (
+          {submitted && !myAffiliate && (
             <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl px-5 py-4 text-emerald-800">
               <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
               <div>
                 <p className="font-semibold text-sm">Application received!</p>
-                <p className="text-sm">We'll review your application and reach out soon with your affiliate link and details.</p>
+                <p className="text-sm">We'll review your application and notify you when approved. You'll then connect your Stripe account to receive payouts.</p>
               </div>
             </div>
+          )}
+
+          {/* Stripe Connect Banner */}
+          {myAffiliate && (
+            <StripeConnectBanner affiliate={myAffiliate} onConnectSuccess={() => refetchMyAffiliate()} />
           )}
 
           {/* My commission stats */}
@@ -214,14 +327,13 @@ export default function AffiliateProgram() {
             ))}
           </div>
 
-          {/* Commission info */}
           <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 text-sm text-blue-800 space-y-1">
             <p className="font-semibold">How commissions work:</p>
             <ul className="list-disc ml-4 space-y-0.5 text-blue-700">
               <li>Starter plan ($19/mo) → you earn <strong>$3.80/mo</strong></li>
               <li>Professional plan ($49/mo) → you earn <strong>$9.80/mo</strong></li>
               <li>Agency plan ($69/mo) → you earn <strong>$13.80/mo</strong></li>
-              <li>Commissions are paid automatically through Stripe.</li>
+              <li>Commissions are transferred automatically to your Stripe account after each payment.</li>
             </ul>
           </div>
 
@@ -277,13 +389,12 @@ export default function AffiliateProgram() {
         <div className="border-t pt-6 space-y-6">
           <h2 className="text-base font-semibold">Admin: Affiliate Management</h2>
 
-          {/* Summary stats */}
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             {[
               { label: 'Total Applicants', value: allAffiliates.length, color: 'text-blue-600' },
               { label: 'Approved Affiliates', value: allAffiliates.filter(a => a.status === 'approved').length, color: 'text-emerald-600' },
+              { label: 'Stripe Connected', value: allAffiliates.filter(a => a.stripe_onboarding_complete).length, color: 'text-violet-600' },
               { label: 'Commissions Owed', value: `$${adminPendingPayout.toFixed(2)}`, color: 'text-amber-600' },
-              { label: 'Total Paid Out', value: `$${adminPaidOut.toFixed(2)}`, color: 'text-emerald-600' },
             ].map(s => (
               <Card key={s.label}>
                 <CardContent className="pt-5 pb-4">
@@ -306,6 +417,7 @@ export default function AffiliateProgram() {
                         <th className="text-left py-3 px-4">Name</th>
                         <th className="text-left py-3 px-4">Email</th>
                         <th className="text-left py-3 px-4">Referral Code</th>
+                        <th className="text-left py-3 px-4">Stripe</th>
                         <th className="text-left py-3 px-4">Applied</th>
                         <th className="text-left py-3 px-4">Status</th>
                         <th className="text-left py-3 px-4">Actions</th>
@@ -313,13 +425,21 @@ export default function AffiliateProgram() {
                     </thead>
                     <tbody>
                       {allAffiliates.length === 0 && (
-                        <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">No affiliate applications yet.</td></tr>
+                        <tr><td colSpan={7} className="py-8 text-center text-muted-foreground">No affiliate applications yet.</td></tr>
                       )}
                       {allAffiliates.map(a => (
                         <tr key={a.id} className="border-b last:border-0 hover:bg-muted/20">
                           <td className="py-3 px-4 font-medium">{a.full_name}</td>
                           <td className="py-3 px-4 text-muted-foreground">{a.email}</td>
                           <td className="py-3 px-4 font-mono text-xs">{a.referral_code || '—'}</td>
+                          <td className="py-3 px-4">
+                            {a.stripe_onboarding_complete
+                              ? <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-emerald-50 text-emerald-700">Connected</span>
+                              : a.stripe_account_id
+                              ? <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-amber-50 text-amber-700">Incomplete</span>
+                              : <span className="text-xs text-muted-foreground">—</span>
+                            }
+                          </td>
                           <td className="py-3 px-4 text-muted-foreground">{a.created_date ? new Date(a.created_date).toLocaleDateString() : '—'}</td>
                           <td className="py-3 px-4">
                             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${

@@ -92,11 +92,11 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Track recurring commissions on every paid invoice
+    // Track recurring commissions on every paid invoice + auto-transfer via Stripe Connect
     if (event.type === 'invoice.paid') {
       const invoice = event.data.object;
-      // Skip the first invoice (handled at checkout.session.completed) and $0 invoices
-      if (invoice.billing_reason === 'subscription_cycle' && invoice.amount_paid > 0) {
+      // Skip $0 invoices; handle both first and recurring payments
+      if (invoice.amount_paid > 0) {
         const customerEmail = invoice.customer_email;
         if (customerEmail) {
           // Find any converted referral for this customer
@@ -106,11 +106,47 @@ Deno.serve(async (req) => {
             const commissionRate = referral.commission_rate || 0.20;
             const newCommission = parseFloat((invoiceAmount * commissionRate).toFixed(2));
             const newTotal = parseFloat(((referral.total_commission_earned || 0) + newCommission).toFixed(2));
+
+            // Look up the affiliate's Stripe Connect account
+            const affiliates = await base44.asServiceRole.entities.Affiliate.filter({ user_email: referral.referrer_email });
+            const affiliate = affiliates[0] || null;
+            // Also check by email field
+            const affiliatesByEmail = affiliate ? [] : await base44.asServiceRole.entities.Affiliate.filter({ email: referral.referrer_email });
+            const resolvedAffiliate = affiliate || affiliatesByEmail[0] || null;
+
+            let transferId = null;
+            if (resolvedAffiliate?.stripe_account_id && resolvedAffiliate?.stripe_onboarding_complete) {
+              // Auto-transfer commission to affiliate's Stripe Connect account
+              const commissionCents = Math.round(newCommission * 100);
+              try {
+                const transfer = await stripe.transfers.create({
+                  amount: commissionCents,
+                  currency: 'usd',
+                  destination: resolvedAffiliate.stripe_account_id,
+                  description: `Commission for referring ${customerEmail}`,
+                  metadata: {
+                    referral_id: referral.id,
+                    referrer_email: referral.referrer_email,
+                    referred_email: customerEmail,
+                    invoice_id: invoice.id,
+                  },
+                });
+                transferId = transfer.id;
+                console.log(`Auto-transferred $${newCommission} to ${resolvedAffiliate.stripe_account_id} (transfer: ${transfer.id})`);
+              } catch (transferErr) {
+                console.error(`Transfer failed for ${referral.referrer_email}:`, transferErr.message);
+              }
+            } else {
+              console.log(`No Stripe Connect account for ${referral.referrer_email} — commission tracked but not transferred`);
+            }
+
             await base44.asServiceRole.entities.Referral.update(referral.id, {
               total_commission_earned: newTotal,
               last_invoice_date: new Date().toISOString().split('T')[0],
+              commission_status: transferId ? 'paid' : (referral.commission_status || 'pending'),
+              ...(transferId ? { payout_reference: transferId, payout_date: new Date().toISOString().split('T')[0] } : {}),
             });
-            console.log(`Recurring commission: +$${newCommission} for ${referral.referrer_email} (total: $${newTotal})`);
+            console.log(`Commission: +$${newCommission} for ${referral.referrer_email} (total: $${newTotal})${transferId ? ' [AUTO-PAID]' : ' [PENDING]'}`);
           }
         }
       }
