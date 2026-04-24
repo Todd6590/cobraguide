@@ -57,9 +57,9 @@ export default function AffiliateProgram() {
     setSubmitting(true);
     try {
       await base44.integrations.Core.SendEmail({
-        to: 'admin@cobrashieldpro.com',
-        subject: 'New Affiliate Program Application',
-        body: `Name: ${form.name}\nEmail: ${form.email}\nUser email: ${user?.email || 'Not logged in'}\n\nPlease review and approve this affiliate application.`,
+        to: 'help@cobrashieldpro.com',
+        subject: '🎉 New Affiliate Program Application',
+        body: `A new affiliate application has been submitted:\n\nName: ${form.name}\nEmail: ${form.email}\nAccount Email: ${user?.email || 'Not logged in'}\nDate: ${new Date().toLocaleString()}\n\nLog in to the admin dashboard at app.cobrashieldpro.com/affiliate-program to review and approve.`,
       });
       localStorage.setItem(`affiliate_applied_${user?.email || form.email}`, '1');
       setSubmitted(true);

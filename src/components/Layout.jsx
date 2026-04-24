@@ -2,7 +2,7 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Building2, Users, CalendarClock, 
   Mail, DollarSign, Shield, ChevronLeft, ChevronRight, LogOut, BarChart2, Settings,
-  BookOpen, MessageSquare, Gift, ClipboardList
+  BookOpen, MessageSquare, Gift, ClipboardList, Award
 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -81,6 +81,7 @@ export default function Layout() {
           {[
             { path: '/getting-started', label: 'Getting Started', icon: BookOpen },
             { path: '/referrals', label: 'Referrals', icon: Gift },
+            { path: '/affiliate-program', label: 'Affiliate Program', icon: Award },
             { path: '/contact', label: 'Contact Us', icon: MessageSquare },
             { path: '/settings', label: 'Settings', icon: Settings },
           ].map((item) => {
