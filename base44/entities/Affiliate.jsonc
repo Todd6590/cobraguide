@@ -1,0 +1,60 @@
+{
+  "name": "Affiliate",
+  "type": "object",
+  "properties": {
+    "full_name": {
+      "type": "string",
+      "description": "Affiliate's full name"
+    },
+    "email": {
+      "type": "string",
+      "description": "Affiliate's email address"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Linked app user email"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected"
+      ],
+      "default": "pending",
+      "description": "Application status"
+    },
+    "referral_code": {
+      "type": "string",
+      "description": "Unique referral code assigned upon approval"
+    },
+    "payout_method": {
+      "type": "string",
+      "enum": [
+        "paypal",
+        "bank_transfer",
+        "check",
+        "stripe",
+        "other"
+      ],
+      "description": "Preferred payout method"
+    },
+    "payout_details": {
+      "type": "string",
+      "description": "Payout account details (e.g. PayPal email)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Admin notes"
+    },
+    "approved_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the application was approved"
+    }
+  },
+  "required": [
+    "full_name",
+    "email"
+  ]
+}
