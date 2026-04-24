@@ -25,7 +25,7 @@ import CobraEligibility from '@/pages/CobraEligibility';
 import Home from '@/pages/Home';
 
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const { isLoadingAuth, isLoadingPublicSettings, authError, isAuthenticated } = useAuth();
 
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
@@ -35,17 +35,17 @@ const AuthenticatedApp = () => {
     );
   }
 
-  if (authError) {
-    if (authError.type === 'user_not_registered') {
-      return <UserNotRegisteredError />;
-    } else if (authError.type === 'auth_required') {
-      // Unauthenticated — render public routes only
-      return (
-        <Routes>
-          <Route path="*" element={<Home />} />
-        </Routes>
-      );
-    }
+  if (authError?.type === 'user_not_registered') {
+    return <UserNotRegisteredError />;
+  }
+
+  // Not authenticated — show landing page for all routes
+  if (!isAuthenticated) {
+    return (
+      <Routes>
+        <Route path="*" element={<Home />} />
+      </Routes>
+    );
   }
 
   return (
@@ -76,12 +76,12 @@ function App() {
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
-        <SubscriptionProvider>
         <Router>
-          <AuthenticatedApp />
+          <SubscriptionProvider>
+            <AuthenticatedApp />
+          </SubscriptionProvider>
         </Router>
         <Toaster />
-        </SubscriptionProvider>
       </QueryClientProvider>
     </AuthProvider>
   )
