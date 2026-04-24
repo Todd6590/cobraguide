@@ -42,6 +42,7 @@ export default function Home() {
     base44.auth.redirectToLogin(window.location.origin + '/');
   };
 
+
   if (checkingAuth) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-white">

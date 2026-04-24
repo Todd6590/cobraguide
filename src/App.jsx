@@ -39,9 +39,12 @@ const AuthenticatedApp = () => {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
     } else if (authError.type === 'auth_required') {
-      // Redirect unauthenticated users to the home/landing page
-      window.location.href = '/home';
-      return null;
+      // Unauthenticated — render public routes only
+      return (
+        <Routes>
+          <Route path="*" element={<Home />} />
+        </Routes>
+      );
     }
   }
 
