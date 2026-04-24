@@ -21,6 +21,7 @@ import Settings from '@/pages/Settings';
 import GettingStarted from '@/pages/GettingStarted';
 import Contact from '@/pages/Contact';
 import Referrals from '@/pages/Referrals';
+import AffiliateProgram from '@/pages/AffiliateProgram';
 import CobraEligibility from '@/pages/CobraEligibility';
 import Home from '@/pages/Home';
 
@@ -65,6 +66,7 @@ const AuthenticatedApp = () => {
         <Route path="/getting-started" element={<GettingStarted />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/referrals" element={<Referrals />} />
+        <Route path="/affiliate-program" element={<AffiliateProgram />} />
         <Route path="/cobra-eligibility" element={<CobraEligibility />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
