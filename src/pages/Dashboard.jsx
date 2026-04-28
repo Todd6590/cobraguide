@@ -6,6 +6,7 @@ import DeadlinesList from '@/components/dashboard/DeadlinesList';
 import RecentActivity from '@/components/dashboard/RecentActivity';
 import PageHeader from '@/components/shared/PageHeader';
 import { useSubscription } from '@/lib/SubscriptionContext';
+import OverduePaymentsBadge from '@/components/dashboard/OverduePaymentsBadge';
 
 export default function Dashboard() {
   const { tenantSettings, isAgency } = useSubscription();
@@ -34,6 +35,8 @@ export default function Dashboard() {
         title="Dashboard" 
         description="Overview of your COBRA administration activity"
       />
+
+      <OverduePaymentsBadge payments={payments} beneficiaries={beneficiaries} />
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
