@@ -13,7 +13,7 @@ import TrialBanner from '@/components/subscription/TrialBanner';
 const navItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/clients', label: 'Clients', icon: Building2 },
-  { path: '/beneficiaries', label: 'Beneficiaries', icon: Users },
+  { path: '/beneficiaries', label: 'Participants', icon: Users },
   { path: '/events', label: 'Qualifying Events', icon: CalendarClock },
   { path: '/notices', label: 'Notices', icon: Mail },
   { path: '/payments', label: 'Payments', icon: DollarSign },
