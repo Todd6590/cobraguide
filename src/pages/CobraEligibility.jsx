@@ -618,7 +618,7 @@ export default function CobraEligibility() {
         <div className="mb-4 flex items-start gap-2 bg-muted/50 border border-border rounded-lg p-3">
           <Info className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
           <p className="text-xs text-muted-foreground">
-            <strong>States following Federal COBRA only</strong> (no separate state Mini-COBRA law): {FEDERAL_ONLY_STATES.join(', ')}. Employers in these states with fewer than 20 employees are not required by their state to offer continuation coverage.
+            <strong>States following Federal COBRA only</strong> (no separate state Mini-COBRA law): {FEDERAL_ONLY_STATES.join(', ')}. Employers in these states with 20 or more employees are subject to Federal COBRA requirements only. There is no state-mandated continuation coverage for employers with fewer than 20 employees in these states.
           </p>
         </div>
 
