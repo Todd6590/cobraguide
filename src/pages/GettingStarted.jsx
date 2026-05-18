@@ -12,7 +12,7 @@ const steps = [
   },
   {
     icon: Users,
-    title: '2. Add Beneficiaries',
+    title: '2. Add Participants',
     color: 'text-violet-600',
     bg: 'bg-violet-50',
     border: 'border-violet-200',
