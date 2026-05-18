@@ -2,8 +2,13 @@ import { Card } from '@/components/ui/card';
 import StatusBadge from '@/components/shared/StatusBadge';
 import ReportToolbar from './ReportToolbar';
 
-const fmt = (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+const fmt = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
 const fmtMoney = (n) => n != null ? `$${Number(n).toFixed(2)}` : '—';
+const fmtDateTime = (date, time) => {
+  if (!date) return '—';
+  const d = fmt(date);
+  return time ? `${d} at ${time}` : d;
+};
 
 const EVENT_LABELS = {
   termination: 'Termination',
@@ -15,8 +20,78 @@ const EVENT_LABELS = {
   employer_bankruptcy: 'Employer Bankruptcy',
 };
 
+const STATUS_LABELS = {
+  pending_event: 'Pending Event',
+  notice_sent: 'Notice Sent',
+  elected: 'Elected',
+  declined: 'Declined',
+  active: 'Active',
+  terminated: 'Terminated',
+  expired: 'Expired',
+};
+
+const DELIVERY_LABELS = {
+  first_class_mail: 'First Class Mail',
+  certified_mail: 'Certified Mail',
+  email: 'Email',
+  hand_delivered: 'Hand Delivered',
+  fax: 'Fax',
+  other: 'Other',
+};
+
+const ACTIVITY_ICONS = {
+  status_change: '🔄',
+  notice_sent: '📬',
+  payment_received: '💰',
+  note_added: '📝',
+  document_uploaded: '📎',
+};
+
+function ActivityLogEntry({ log }) {
+  const icon = ACTIVITY_ICONS[log.activity_type] || '•';
+  const isStatusChange = log.activity_type === 'status_change';
+
+  let title = '';
+  if (isStatusChange) {
+    const prev = STATUS_LABELS[log.previous_status] || log.previous_status || '—';
+    const next = STATUS_LABELS[log.new_status] || log.new_status || '—';
+    title = `Status Changed: ${prev} → ${next}`;
+  } else {
+    title = log.activity_type?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'Activity';
+  }
+
+  return (
+    <div className="flex items-start gap-3 py-2.5 border-b border-border last:border-0">
+      <span className="text-base mt-0.5 flex-shrink-0">{icon}</span>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-foreground">{title}</p>
+        <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-0.5">
+          <span className="text-xs text-muted-foreground">{fmtDateTime(log.activity_date, log.activity_time)}</span>
+          {log.delivery_method && (
+            <span className="text-xs text-muted-foreground">via {DELIVERY_LABELS[log.delivery_method] || log.delivery_method}</span>
+          )}
+          {log.logged_by && (
+            <span className="text-xs text-muted-foreground">by {log.logged_by}</span>
+          )}
+        </div>
+        {log.notes && <p className="text-xs text-muted-foreground mt-1 italic">"{log.notes}"</p>}
+        {log.document_url && (
+          <a
+            href={log.document_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-primary underline mt-1 inline-block"
+          >
+            📎 {log.document_name || 'View Document'}
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function ParticipantHistoryReport({ data }) {
-  const { beneficiaries, events, notices, payments, clientName } = data;
+  const { beneficiaries, events, notices, payments, activityLogs = [], clientName } = data;
 
   const csvHeaders = [
     'Name', 'Client', 'Relationship', 'Coverage Type', 'COBRA Status',
@@ -67,6 +142,13 @@ export default function ParticipantHistoryReport({ data }) {
             const bNotices = notices.filter(n => n.beneficiary_id === b.id);
             const bPayments = payments.filter(p => p.beneficiary_id === b.id);
             const totalCollected = bPayments.filter(p => p.status === 'received').reduce((s, p) => s + (p.amount || 0), 0);
+            const bLogs = activityLogs
+              .filter(l => l.beneficiary_id === b.id)
+              .sort((a, b) => {
+                const da = new Date(`${a.activity_date}T${a.activity_time || '00:00'}`);
+                const db = new Date(`${b.activity_date}T${b.activity_time || '00:00'}`);
+                return db - da;
+              });
 
             return (
               <Card key={b.id} className="p-5">
@@ -112,6 +194,18 @@ export default function ParticipantHistoryReport({ data }) {
                     <div><span className="text-muted-foreground">Missed Payments: </span><span className="font-semibold text-red-600">{bPayments.filter(p => p.status === 'missed').length}</span></div>
                   )}
                 </div>
+
+                {/* Activity Log */}
+                {bLogs.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-border">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Activity Log</p>
+                    <div>
+                      {bLogs.map(log => (
+                        <ActivityLogEntry key={log.id} log={log} />
+                      ))}
+                    </div>
+                  </div>
+                )}
               </Card>
             );
           })}

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, Search, MoreHorizontal, Pencil, Trash2, FileText, Mail, Zap } from 'lucide-react';
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, Zap } from 'lucide-react';
 import { useSubscription } from '@/lib/SubscriptionContext';
 import UpgradeDialog from '@/components/subscription/UpgradeDialog';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import PageHeader from '@/components/shared/PageHeader';
 import StatusBadge from '@/components/shared/StatusBadge';
 import BeneficiaryFormDialog from '@/components/beneficiaries/BeneficiaryFormDialog';
 import NoticeGenerationStatus from '@/components/beneficiaries/NoticeGenerationStatus';
+import CobraStatusChangeDialog from '@/components/participants/CobraStatusChangeDialog';
 import { generateRequiredNotices, COVERAGE_MONTHS } from '@/lib/cobraUtils';
 import { sendNoticeEmails } from '@/lib/noticeEmailService';
 
@@ -23,6 +24,7 @@ export default function Beneficiaries() {
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [generationStatus, setGenerationStatus] = useState(null);
+  const [statusChangeDialog, setStatusChangeDialog] = useState(null); // { participant, previousStatus, newStatus, pendingData }
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { beneficiaryLimit, isTrial, trialExpired, user } = useSubscription();
@@ -47,17 +49,12 @@ export default function Beneficiaries() {
         ...beneficiaryData
       } = data;
 
-      // Save / update the beneficiary
       const saved = editing
         ? await base44.entities.Beneficiary.update(editing.id, beneficiaryData)
         : await base44.entities.Beneficiary.create(beneficiaryData);
 
-      // If a qualifying event was entered inline, create it and auto-generate notices
       if (event_type && event_date) {
         const clientRecord = clients.find(c => c.id === saved.client_id);
-        const beneficiaryWithId = { ...saved };
-
-        // Create the QualifyingEvent record
         const qualifyingEvent = await base44.entities.QualifyingEvent.create({
           beneficiary_id: saved.id,
           beneficiary_name: `${saved.first_name} ${saved.last_name}`,
@@ -71,13 +68,10 @@ export default function Beneficiaries() {
           status: 'notice_sent',
         });
 
-        const requiredNotices = generateRequiredNotices(beneficiaryWithId, qualifyingEvent, clientRecord);
-
-        // Avoid duplicates
+        const requiredNotices = generateRequiredNotices(saved, qualifyingEvent, clientRecord);
         const alreadyCreated = existingNotices
           .filter(n => n.beneficiary_id === saved.id && n.qualifying_event_id === qualifyingEvent.id)
           .map(n => n.notice_type);
-
         const newNotices = requiredNotices.filter(n => !alreadyCreated.includes(n.notice_type));
 
         const createdNotices = [];
@@ -86,9 +80,6 @@ export default function Beneficiaries() {
           createdNotices.push(created);
         }
 
-        // Send emails immediately only for the election notice.
-        // Conversion and early_termination notices are emailed automatically
-        // 15 days before their legal due date by a scheduled job.
         const emailResults = [];
         for (const notice of createdNotices) {
           if (notice.notice_type === 'election') {
@@ -99,7 +90,6 @@ export default function Beneficiaries() {
               emailResults.push({ notice, adminSent: false, clientSent: false, error: err.message });
             }
           } else {
-            // Deferred — will be emailed 15 days before due date
             emailResults.push({ notice, adminSent: false, clientSent: false, deferred: true });
           }
         }
@@ -117,9 +107,68 @@ export default function Beneficiaries() {
       setEditing(null);
     },
     onError: (err) => {
-      toast({ title: 'Error saving beneficiary', description: err.message, variant: 'destructive' });
+      toast({ title: 'Error saving participant', description: err.message, variant: 'destructive' });
     }
   });
+
+  // Called when BeneficiaryFormDialog saves — intercept if cobra_status changed
+  const handleSave = (data) => {
+    const previousStatus = editing?.cobra_status;
+    const newStatus = data.cobra_status;
+    if (editing && previousStatus !== newStatus) {
+      // Show status change dialog before saving
+      setStatusChangeDialog({ participant: editing, previousStatus, newStatus, pendingData: data });
+    } else {
+      saveMutation.mutate(data);
+    }
+  };
+
+  const statusChangeMutation = useMutation({
+    mutationFn: async ({ pendingData, logData }) => {
+      const saved = await base44.entities.Beneficiary.update(pendingData.id || editing.id, pendingData);
+      // Log the activity
+      await base44.entities.ParticipantActivityLog.create({
+        beneficiary_id: saved.id,
+        participant_name: `${saved.first_name} ${saved.last_name}`,
+        client_id: saved.client_id,
+        client_name: saved.client_name,
+        activity_type: 'status_change',
+        previous_status: logData.previousStatus,
+        new_status: logData.newStatus,
+        activity_date: logData.activityDate,
+        activity_time: logData.activityTime,
+        delivery_method: logData.deliveryMethod || undefined,
+        notes: logData.notes || undefined,
+        document_url: logData.documentUrl || undefined,
+        document_name: logData.documentName || undefined,
+        logged_by: user?.email,
+      });
+      return saved;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['beneficiaries'] });
+      queryClient.invalidateQueries({ queryKey: ['activity_logs'] });
+      setStatusChangeDialog(null);
+      setDialogOpen(false);
+      setEditing(null);
+      toast({ title: 'Participant status updated and activity logged.' });
+    },
+    onError: (err) => {
+      toast({ title: 'Error updating status', description: err.message, variant: 'destructive' });
+    }
+  });
+
+  const handleStatusChangeConfirm = (logData) => {
+    if (!statusChangeDialog) return;
+    statusChangeMutation.mutate({
+      pendingData: statusChangeDialog.pendingData,
+      logData: {
+        ...logData,
+        previousStatus: statusChangeDialog.previousStatus,
+        newStatus: statusChangeDialog.newStatus,
+      },
+    });
+  };
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Beneficiary.delete(id),
@@ -131,12 +180,11 @@ export default function Beneficiaries() {
     b.client_name?.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Only count records the current user created toward the limit (sample/demo data doesn't count)
-  const ownedBeneficiaryCount = beneficiaries.filter(b => b.created_by === user?.email).length;
-  const atBeneficiaryLimit = beneficiaryLimit > 0 && ownedBeneficiaryCount >= beneficiaryLimit;
+  const ownedCount = beneficiaries.filter(b => b.created_by === user?.email).length;
+  const atLimit = beneficiaryLimit > 0 && ownedCount >= beneficiaryLimit;
 
-  const handleAddBeneficiary = () => {
-    if (trialExpired || atBeneficiaryLimit) { setUpgradeOpen(true); return; }
+  const handleAddParticipant = () => {
+    if (trialExpired || atLimit) { setUpgradeOpen(true); return; }
     setEditing(null);
     setDialogOpen(true);
   };
@@ -144,17 +192,19 @@ export default function Beneficiaries() {
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto">
       <PageHeader
-        title="Qualified Beneficiaries"
-        description="Track all COBRA-eligible individuals"
+        title="Participants"
+        description="Track all COBRA-eligible participants"
         actions={
           <div className="flex items-center gap-2">
-            {atBeneficiaryLimit && !trialExpired && (
+            {atLimit && !trialExpired && (
               <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-3 py-1">
-                {beneficiaryLimit} beneficiary limit reached
+                {beneficiaryLimit} participant limit reached
               </span>
             )}
-            <Button onClick={handleAddBeneficiary} variant={(atBeneficiaryLimit || trialExpired) ? 'outline' : 'default'}>
-              {(atBeneficiaryLimit || trialExpired) ? <><Zap className="w-4 h-4 mr-2 text-amber-500" /> Upgrade to Add More</> : <><Plus className="w-4 h-4 mr-2" /> Add Beneficiary</>}
+            <Button onClick={handleAddParticipant} variant={(atLimit || trialExpired) ? 'outline' : 'default'}>
+              {(atLimit || trialExpired)
+                ? <><Zap className="w-4 h-4 mr-2 text-amber-500" /> Upgrade to Add More</>
+                : <><Plus className="w-4 h-4 mr-2" /> Add Participant</>}
             </Button>
           </div>
         }
@@ -164,7 +214,7 @@ export default function Beneficiaries() {
         <div className="p-4 border-b border-border">
           <div className="relative max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input placeholder="Search beneficiaries..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+            <Input placeholder="Search participants..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
           </div>
         </div>
         <Table>
@@ -184,7 +234,7 @@ export default function Beneficiaries() {
             {isLoading ? (
               <TableRow><TableCell colSpan={8} className="text-center py-10 text-muted-foreground">Loading...</TableCell></TableRow>
             ) : filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={8} className="text-center py-10 text-muted-foreground">No beneficiaries found</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="text-center py-10 text-muted-foreground">No participants found</TableCell></TableRow>
             ) : filtered.map(b => (
               <TableRow key={b.id} className="hover:bg-muted/50">
                 <TableCell className="font-medium">{b.first_name} {b.last_name}</TableCell>
@@ -219,15 +269,27 @@ export default function Beneficiaries() {
         </Table>
       </Card>
 
-      <UpgradeDialog open={upgradeOpen} onOpenChange={setUpgradeOpen} currentTier={isTrial ? 'trial' : undefined} reason="beneficiary" />
+      <UpgradeDialog open={upgradeOpen} onOpenChange={setUpgradeOpen} currentTier={isTrial ? 'trial' : undefined} reason="participant" />
       <BeneficiaryFormDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         beneficiary={editing}
         clients={clients}
-        onSave={(data) => saveMutation.mutate(data)}
+        onSave={handleSave}
         saving={saveMutation.isPending}
       />
+
+      {statusChangeDialog && (
+        <CobraStatusChangeDialog
+          open={!!statusChangeDialog}
+          onOpenChange={(open) => { if (!open) setStatusChangeDialog(null); }}
+          participant={statusChangeDialog.participant}
+          previousStatus={statusChangeDialog.previousStatus}
+          newStatus={statusChangeDialog.newStatus}
+          onConfirm={handleStatusChangeConfirm}
+          saving={statusChangeMutation.isPending}
+        />
+      )}
 
       {generationStatus && (
         <NoticeGenerationStatus

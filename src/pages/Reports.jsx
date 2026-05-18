@@ -32,7 +32,7 @@ const REPORT_TYPES = [
   {
     id: 'participants',
     label: 'Participant History',
-    description: 'Full COBRA history per beneficiary',
+    description: 'Full COBRA history and activity log per participant',
     icon: Users,
     color: 'text-purple-600',
     bg: 'bg-purple-50',
@@ -77,12 +77,18 @@ export default function Reports() {
     queryFn: () => base44.entities.QualifyingEvent.list(),
   });
 
+  const { data: activityLogs = [] } = useQuery({
+    queryKey: ['activity_logs'],
+    queryFn: () => base44.entities.ParticipantActivityLog.list(),
+  });
+
   const filteredData = {
     clients,
     beneficiaries: clientFilter === 'all' ? beneficiaries : beneficiaries.filter(b => b.client_id === clientFilter),
     notices: clientFilter === 'all' ? notices : notices.filter(n => n.client_id === clientFilter),
     payments: clientFilter === 'all' ? payments : payments.filter(p => p.client_id === clientFilter),
     events: clientFilter === 'all' ? events : events.filter(e => e.client_id === clientFilter),
+    activityLogs: clientFilter === 'all' ? activityLogs : activityLogs.filter(l => l.client_id === clientFilter),
     clientName: clientFilter === 'all' ? 'All Clients' : clients.find(c => c.id === clientFilter)?.company_name || '',
   };
 

@@ -1,0 +1,82 @@
+{
+  "name": "ParticipantActivityLog",
+  "type": "object",
+  "properties": {
+    "beneficiary_id": {
+      "type": "string",
+      "description": "Reference to the Beneficiary/Participant"
+    },
+    "participant_name": {
+      "type": "string",
+      "description": "Participant full name for display"
+    },
+    "client_id": {
+      "type": "string",
+      "description": "Reference to Client"
+    },
+    "client_name": {
+      "type": "string",
+      "description": "Client company name for display"
+    },
+    "activity_type": {
+      "type": "string",
+      "enum": [
+        "status_change",
+        "notice_sent",
+        "payment_received",
+        "note_added",
+        "document_uploaded"
+      ],
+      "description": "Type of activity"
+    },
+    "previous_status": {
+      "type": "string",
+      "description": "COBRA status before the change"
+    },
+    "new_status": {
+      "type": "string",
+      "description": "COBRA status after the change"
+    },
+    "activity_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the activity occurred"
+    },
+    "activity_time": {
+      "type": "string",
+      "description": "Time the activity occurred (HH:MM)"
+    },
+    "delivery_method": {
+      "type": "string",
+      "enum": [
+        "first_class_mail",
+        "certified_mail",
+        "email",
+        "hand_delivered",
+        "fax",
+        "other"
+      ],
+      "description": "Method used (for notice sent activities)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Details about the activity"
+    },
+    "document_url": {
+      "type": "string",
+      "description": "URL of any uploaded supporting document (e.g. mail receipt)"
+    },
+    "document_name": {
+      "type": "string",
+      "description": "Original filename of the uploaded document"
+    },
+    "logged_by": {
+      "type": "string",
+      "description": "Email of the user who logged this activity"
+    }
+  },
+  "required": [
+    "beneficiary_id",
+    "activity_type"
+  ]
+}
