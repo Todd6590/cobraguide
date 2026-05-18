@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Plus, Search, MoreHorizontal, Pencil, Trash2, Zap } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useSubscription } from '@/lib/SubscriptionContext';
 import UpgradeDialog from '@/components/subscription/UpgradeDialog';
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,7 @@ export default function Beneficiaries() {
   const [editing, setEditing] = useState(null);
   const [generationStatus, setGenerationStatus] = useState(null);
   const [statusChangeDialog, setStatusChangeDialog] = useState(null); // { participant, previousStatus, newStatus, pendingData }
+  const [deleteConfirm, setDeleteConfirm] = useState(null); // participant to delete
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { beneficiaryLimit, isTrial, trialExpired, user } = useSubscription();
@@ -171,8 +173,33 @@ export default function Beneficiaries() {
   };
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Beneficiary.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['beneficiaries'] }),
+    mutationFn: async (id) => {
+      // Delete all related records first
+      const [relatedEvents, relatedNotices, relatedPayments, relatedLogs] = await Promise.all([
+        base44.entities.QualifyingEvent.filter({ beneficiary_id: id }),
+        base44.entities.CobraNotice.filter({ beneficiary_id: id }),
+        base44.entities.Payment.filter({ beneficiary_id: id }),
+        base44.entities.ParticipantActivityLog.filter({ beneficiary_id: id }),
+      ]);
+      await Promise.all([
+        ...relatedEvents.map(e => base44.entities.QualifyingEvent.delete(e.id)),
+        ...relatedNotices.map(n => base44.entities.CobraNotice.delete(n.id)),
+        ...relatedPayments.map(p => base44.entities.Payment.delete(p.id)),
+        ...relatedLogs.map(l => base44.entities.ParticipantActivityLog.delete(l.id)),
+      ]);
+      await base44.entities.Beneficiary.delete(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['beneficiaries'] });
+      queryClient.invalidateQueries({ queryKey: ['notices'] });
+      queryClient.invalidateQueries({ queryKey: ['qualifying_events'] });
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['activity_logs'] });
+      toast({ title: 'Participant and all related records deleted.' });
+    },
+    onError: (err) => {
+      toast({ title: 'Error deleting participant', description: err.message, variant: 'destructive' });
+    }
   });
 
   const filtered = beneficiaries.filter(b =>
@@ -257,7 +284,7 @@ export default function Beneficiaries() {
                       <DropdownMenuItem onClick={() => { setEditing(b); setDialogOpen(true); }}>
                         <Pencil className="w-4 h-4 mr-2" /> Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive" onClick={() => deleteMutation.mutate(b.id)}>
+                      <DropdownMenuItem className="text-destructive" onClick={() => setDeleteConfirm(b)}>
                         <Trash2 className="w-4 h-4 mr-2" /> Delete
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -290,6 +317,26 @@ export default function Beneficiaries() {
           saving={statusChangeMutation.isPending}
         />
       )}
+
+      <AlertDialog open={!!deleteConfirm} onOpenChange={(open) => { if (!open) setDeleteConfirm(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you wish to delete this participant?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Once a participant is deleted, there is no way to restore the information. This will also permanently delete all associated qualifying events, notices, payments, and activity logs for <strong>{deleteConfirm?.first_name} {deleteConfirm?.last_name}</strong>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => { deleteMutation.mutate(deleteConfirm.id); setDeleteConfirm(null); }}
+            >
+              Yes, Delete Participant
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {generationStatus && (
         <NoticeGenerationStatus
