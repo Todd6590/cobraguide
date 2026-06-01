@@ -4,14 +4,13 @@ import { useTeam } from '@/lib/TeamContext';
 
 const SubscriptionContext = createContext(null);
 
-export const PLANS = {
-  trial:        { label: 'Free Trial',    clientLimit: 1,   beneficiaryLimit: 1, price: 'Free',    color: 'text-gray-600',    bg: 'bg-gray-50',    border: 'border-gray-200' },
-  starter:      { label: 'Starter',       clientLimit: 5,   beneficiaryLimit: 0, price: '$29/mo',  color: 'text-blue-600',    bg: 'bg-blue-50',    border: 'border-blue-200' },
-  professional: { label: 'Professional',  clientLimit: 25,  beneficiaryLimit: 0, price: '$69/mo',  color: 'text-violet-600',  bg: 'bg-violet-50',  border: 'border-violet-200' },
-  agency:       { label: 'Agency',        clientLimit: 0,   beneficiaryLimit: 0, price: '$99/mo',  color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200' },
+export const PLAN = {
+  label: 'COBRA Shield Pro',
+  price: '$19/mo',
+  color: 'text-blue-600',
+  bg: 'bg-blue-50',
+  border: 'border-blue-200',
 };
-
-const TRIAL_DAYS = 3;
 
 export function SubscriptionProvider({ children }) {
   const [plan, setPlan] = useState(null);
@@ -27,16 +26,14 @@ export function SubscriptionProvider({ children }) {
 
       const emailToUse = resolvedOwnerEmail || me.email;
 
-      // Load plan belonging to the owner (subscriber), not the team member
       const plans = await base44.entities.SubscriptionPlan.filter({ user_email: emailToUse });
       if (plans.length > 0) {
         setPlan(plans[0]);
       } else if (emailToUse === me.email) {
-        // Only create a new trial if this user IS the owner (not a team member)
         const created = await base44.entities.SubscriptionPlan.create({
           user_email: me.email,
-          plan_tier: 'trial',
-          client_limit: 1,
+          plan_tier: 'professional',
+          client_limit: 0,
           trial_start_date: new Date().toISOString().split('T')[0],
         });
         setPlan(created);
@@ -58,48 +55,10 @@ export function SubscriptionProvider({ children }) {
     }
   }, [teamLoading, ownerEmail]);
 
-  const isTrial = plan?.plan_tier === 'trial';
-
-  // StudyGroup trial: 7-day agency trial, expired when study_group_expired is true OR past trial_end date
-  const isStudyGroupTrial = !!plan?.is_study_group && !plan?.study_group_expired && plan?.plan_tier === 'agency';
-  const studyGroupExpired = (() => {
-    if (!plan?.is_study_group) return false;
-    if (plan?.study_group_expired) return true;
-    if (!plan?.study_group_trial_end) return false;
-    return new Date() > new Date(plan.study_group_trial_end);
-  })();
-
-  const studyGroupDaysRemaining = (() => {
-    if (!isStudyGroupTrial || !plan?.study_group_trial_end) return null;
-    const end = new Date(plan.study_group_trial_end);
-    const now = new Date();
-    return Math.max(0, Math.ceil((end - now) / (1000 * 60 * 60 * 24)));
-  })();
-
-  // Check if trial has expired
-  const trialExpired = (() => {
-    if (studyGroupExpired) return true;
-    if (!isTrial || !plan?.trial_start_date) return false;
-    const start = new Date(plan.trial_start_date);
-    const now = new Date();
-    const diffDays = (now - start) / (1000 * 60 * 60 * 24);
-    return diffDays >= TRIAL_DAYS;
-  })();
-
-  // Days remaining in trial
-  const trialDaysRemaining = (() => {
-    if (isStudyGroupTrial) return studyGroupDaysRemaining;
-    if (!isTrial || !plan?.trial_start_date) return null;
-    const start = new Date(plan.trial_start_date);
-    const now = new Date();
-    const diffDays = (now - start) / (1000 * 60 * 60 * 24);
-    return Math.max(0, Math.ceil(TRIAL_DAYS - diffDays));
-  })();
-
-  const currentPlanInfo = plan ? PLANS[plan.plan_tier] : PLANS.trial;
-  const clientLimit = currentPlanInfo?.clientLimit ?? 1;       // 0 = unlimited
-  const beneficiaryLimit = currentPlanInfo?.beneficiaryLimit ?? 1; // 0 = unlimited
-  const isAgency = plan?.plan_tier === 'agency';
+  // Everyone gets unlimited — no tier gating
+  const isActive = !!plan;
+  const clientLimit = 0;       // 0 = unlimited
+  const beneficiaryLimit = 0;  // 0 = unlimited
 
   const refreshPlan = () => load();
 
@@ -107,9 +66,17 @@ export function SubscriptionProvider({ children }) {
     <SubscriptionContext.Provider value={{
       plan, tenantSettings, loading, user,
       clientLimit, beneficiaryLimit,
-      isAgency, isTrial, trialExpired, trialDaysRemaining,
-      isStudyGroupTrial, studyGroupExpired, studyGroupDaysRemaining,
-      currentPlanInfo, refreshPlan, setTenantSettings
+      isActive,
+      // Legacy aliases kept so existing components don't break
+      isAgency: true,
+      isTrial: false,
+      trialExpired: false,
+      trialDaysRemaining: null,
+      isStudyGroupTrial: false,
+      studyGroupExpired: false,
+      studyGroupDaysRemaining: null,
+      currentPlanInfo: PLAN,
+      refreshPlan, setTenantSettings
     }}>
       {children}
     </SubscriptionContext.Provider>

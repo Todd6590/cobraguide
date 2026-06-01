@@ -1,37 +1,27 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { CheckCircle, Zap, Clock, Tag } from 'lucide-react';
-import { PLANS } from '@/lib/SubscriptionContext';
+import { CheckCircle, Zap } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useState } from 'react';
 import { useSubscription } from '@/lib/SubscriptionContext';
 import { useToast } from '@/components/ui/use-toast';
 
-const SALE_PRICES = {
-  starter:      { sale: '$19/mo', original: '$29/mo' },
-  professional: { sale: '$49/mo', original: '$69/mo' },
-  agency:       { sale: '$69/mo', original: '$99/mo' },
-};
+const FEATURES = [
+  'Unlimited clients',
+  'Unlimited beneficiaries',
+  'All COBRA tools',
+  'Notice management',
+  'Payment tracking',
+  'Reports & white-label branding',
+  'Team member access',
+];
 
-const PLAN_FEATURES = {
-  trial:        ['1 client', '1 beneficiary', '3-day free trial', 'All COBRA tools'],
-  starter:      ['Up to 5 clients', 'Unlimited beneficiaries', 'All COBRA tools', 'Notice management', 'Payment tracking', 'Reports'],
-  professional: ['Up to 25 clients', 'All Starter features', 'Priority support'],
-  agency:       ['Unlimited clients', 'All Professional features', 'Custom logo & white-labeling', 'Reports with your branding'],
-};
-
-export default function UpgradeDialog({ open, onOpenChange, currentTier, reason, isStudyGroupExpired }) {
-  const { plan, refreshPlan, isTrial, trialExpired, trialDaysRemaining, user } = useSubscription();
-  const [upgrading, setUpgrading] = useState(null);
-  const [discountCode, setDiscountCode] = useState('');
+export default function UpgradeDialog({ open, onOpenChange }) {
+  const { user } = useSubscription();
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const tierOrder = ['starter', 'professional', 'agency'];
-  const currentIndex = tierOrder.indexOf(currentTier || 'starter');
-
-  const handleUpgrade = async (tier) => {
-    // Block checkout if running inside iframe (preview mode)
+  const handleSubscribe = async () => {
     if (window.self !== window.top) {
       toast({
         title: 'Checkout not available in preview',
@@ -41,18 +31,15 @@ export default function UpgradeDialog({ open, onOpenChange, currentTier, reason,
       return;
     }
 
-    setUpgrading(tier);
+    setLoading(true);
     try {
       const origin = window.location.origin;
-      // Pick up referral code from URL or localStorage
       const urlParams = new URLSearchParams(window.location.search);
       const referralCode = urlParams.get('ref') || localStorage.getItem('referral_code') || undefined;
 
       const response = await base44.functions.invoke('createCheckoutSession', {
-        tier,
         successUrl: `${origin}/settings?upgraded=true`,
         cancelUrl: `${origin}/settings`,
-        discountCode: discountCode.trim() || undefined,
         userEmail: user?.email,
         referralCode,
       });
@@ -61,104 +48,39 @@ export default function UpgradeDialog({ open, onOpenChange, currentTier, reason,
       }
     } catch (err) {
       const detail = err.response?.data?.error || err.message;
-      console.error('Checkout error:', err.response?.data);
       toast({ title: 'Error starting checkout', description: detail, variant: 'destructive' });
     } finally {
-      setUpgrading(null);
+      setLoading(false);
     }
   };
 
-  const description = isStudyGroupExpired
-    ? 'Your 7-day StudyGroup Agency trial has ended. Select a plan below to continue.'
-    : trialExpired
-    ? 'Your 3-day free trial has ended. Choose a plan to continue.'
-    : reason === 'beneficiary'
-    ? 'You\'ve reached your trial limit of 1 beneficiary. Upgrade to add more.'
-    : 'You\'ve reached your trial limit of 1 client. Upgrade to add more.';
-
-  const isBlocking = trialExpired || isStudyGroupExpired;
-
   return (
-    <Dialog open={open} onOpenChange={isBlocking ? undefined : onOpenChange}>
-      <DialogContent className={`max-w-3xl ${isBlocking ? '[&>button]:hidden' : ''}`}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
-            {isStudyGroupExpired
-              ? <><Clock className="w-5 h-5 text-red-500" /> Your StudyGroup Trial Has Ended</>
-              : trialExpired
-              ? <><Clock className="w-5 h-5 text-red-500" /> Your Trial Has Ended</>
-              : <><Zap className="w-5 h-5 text-amber-500" /> Upgrade Your Plan</>
-            }
+            <Zap className="w-5 h-5 text-amber-500" /> COBRA Shield Pro
           </DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+          <DialogDescription>Subscribe to get full access to all features.</DialogDescription>
         </DialogHeader>
 
-        {isTrial && !trialExpired && trialDaysRemaining !== null && (
-          <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2 text-sm text-amber-700">
-            <Clock className="w-4 h-4 flex-shrink-0" />
-            {trialDaysRemaining === 0
-              ? 'Your trial expires today!'
-              : `${trialDaysRemaining} day${trialDaysRemaining !== 1 ? 's' : ''} remaining in your free trial.`}
+        <div className="rounded-xl border-2 border-blue-200 bg-blue-50 p-6 flex flex-col gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-blue-600">COBRA Shield Pro</p>
+            <p className="text-3xl font-bold text-foreground mt-1">$19<span className="text-base font-normal text-muted-foreground">/mo</span></p>
+            <p className="text-sm text-muted-foreground mt-0.5">Unlimited clients & beneficiaries</p>
           </div>
-        )}
-
-        <div className="flex items-center gap-2 mt-2">
-          <Tag className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-          <Input
-            placeholder="Have a discount code? Enter it here"
-            value={discountCode}
-            onChange={(e) => setDiscountCode(e.target.value)}
-            className="text-sm"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
-          {tierOrder.map((tier, idx) => {
-            const info = PLANS[tier];
-            const isCurrent = !isTrial && !isStudyGroupExpired && tier === currentTier;
-            const isUpgrade = isTrial || isStudyGroupExpired || idx > currentIndex;
-            return (
-              <div
-                key={tier}
-                className={`rounded-xl border-2 p-5 flex flex-col gap-3 ${
-                  isCurrent ? 'border-primary bg-primary/5' : isUpgrade ? `${info.border} ${info.bg}` : 'border-border opacity-60'
-                }`}
-              >
-                <div>
-                  <p className={`text-xs font-bold uppercase tracking-widest ${info.color}`}>{info.label}</p>
-                  <div className="flex items-baseline gap-2 mt-1">
-                    <p className="text-2xl font-bold text-foreground">{SALE_PRICES[tier].sale}</p>
-                    <p className="text-sm text-muted-foreground line-through">{SALE_PRICES[tier].original}</p>
-                  </div>
-                  <p className="text-xs font-semibold text-emerald-600 mt-0.5">Limited-time offer!</p>
-                  <p className="text-xs text-muted-foreground">{info.clientLimit === 0 ? 'Unlimited clients' : `Up to ${info.clientLimit} clients`}</p>
-                </div>
-                <ul className="space-y-1.5 flex-1">
-                  {PLAN_FEATURES[tier].map(f => (
-                    <li key={f} className="flex items-center gap-2 text-sm">
-                      <CheckCircle className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                {isCurrent ? (
-                  <Button disabled variant="outline" size="sm">Current Plan</Button>
-                ) : isUpgrade ? (
-                  <Button
-                    size="sm"
-                    className={`${info.bg} ${info.color} border ${info.border} hover:opacity-90`}
-                    variant="outline"
-                    onClick={() => handleUpgrade(tier)}
-                    disabled={!!upgrading}
-                  >
-                    {upgrading === tier ? 'Upgrading...' : `Upgrade to ${info.label}`}
-                  </Button>
-                ) : (
-                  <Button disabled variant="ghost" size="sm">Lower Tier</Button>
-                )}
-              </div>
-            );
-          })}
+          <ul className="space-y-2">
+            {FEATURES.map(f => (
+              <li key={f} className="flex items-center gap-2 text-sm">
+                <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                {f}
+              </li>
+            ))}
+          </ul>
+          <Button onClick={handleSubscribe} disabled={loading} className="w-full" size="lg">
+            {loading ? 'Loading...' : 'Subscribe Now — $19/mo'}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

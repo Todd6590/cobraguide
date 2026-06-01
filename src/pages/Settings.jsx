@@ -1,18 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
-import { useSubscription, PLANS } from '@/lib/SubscriptionContext';
+import { useSubscription } from '@/lib/SubscriptionContext';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import PageHeader from '@/components/shared/PageHeader';
-import UpgradeDialog from '@/components/subscription/UpgradeDialog';
 import { Upload, CheckCircle, Building2, Zap, Image } from 'lucide-react';
 import TeamManagement from '@/components/settings/TeamManagement';
 
 export default function Settings() {
-  const { plan, tenantSettings, isAgency, currentPlanInfo, user, refreshPlan, setTenantSettings } = useSubscription();
-  const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const { tenantSettings, user, refreshPlan, setTenantSettings } = useSubscription();
 
   // Handle return from Stripe checkout
   useEffect(() => {
@@ -22,6 +20,7 @@ export default function Settings() {
       window.history.replaceState({}, '', '/settings');
     }
   }, []);
+
   const [companyName, setCompanyName] = useState(tenantSettings?.company_name || '');
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -65,45 +64,34 @@ export default function Settings() {
 
   return (
     <div className="p-6 lg:p-8 max-w-3xl mx-auto">
-      <PageHeader title="Account Settings" description="Manage your subscription and branding" />
+      <PageHeader title="Account Settings" description="Manage your account and branding" />
 
-      {/* Current Plan */}
+      {/* Subscription */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Zap className="w-4 h-4 text-amber-500" /> Subscription Plan</CardTitle>
-          <CardDescription>Your current plan and limits</CardDescription>
+          <CardTitle className="flex items-center gap-2"><Zap className="w-4 h-4 text-amber-500" /> Subscription</CardTitle>
+          <CardDescription>Your current plan</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className={`flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl border-2 ${currentPlanInfo?.border} ${currentPlanInfo?.bg}`}>
+          <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl border-2 border-blue-200 bg-blue-50">
             <div>
-              <p className={`text-xs font-bold uppercase tracking-widest ${currentPlanInfo?.color}`}>{currentPlanInfo?.label}</p>
-              <p className="font-semibold text-lg">{currentPlanInfo?.price}</p>
-              <p className="text-sm text-muted-foreground">
-                {currentPlanInfo?.clientLimit === 0 ? 'Unlimited clients' : `Up to ${currentPlanInfo?.clientLimit} clients`}
-              </p>
+              <p className="text-xs font-bold uppercase tracking-widest text-blue-600">COBRA Shield Pro</p>
+              <p className="font-semibold text-lg">$19/mo</p>
+              <p className="text-sm text-muted-foreground">Unlimited clients &amp; beneficiaries</p>
             </div>
-            {plan?.plan_tier !== 'agency' && (
-              <Button onClick={() => setUpgradeOpen(true)}>
-                <Zap className="w-4 h-4 mr-2" /> Upgrade Plan
-              </Button>
-            )}
           </div>
         </CardContent>
       </Card>
 
-      {/* Branding — Agency only */}
-      <Card className={!isAgency ? 'opacity-60' : ''}>
+      {/* Branding */}
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Image className="w-4 h-4 text-purple-500" /> White-Label Branding
-            {!isAgency && (
-              <span className="ml-2 text-xs bg-amber-100 text-amber-700 border border-amber-200 rounded-full px-2 py-0.5 font-medium">Agency Plan Only</span>
-            )}
           </CardTitle>
           <CardDescription>Upload your logo to appear on the dashboard and reports</CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
-          {/* Logo Upload */}
           <div>
             <Label className="mb-2 block">Company Logo</Label>
             <div className="flex items-center gap-4">
@@ -119,7 +107,7 @@ export default function Settings() {
                   variant="outline"
                   size="sm"
                   onClick={() => fileRef.current?.click()}
-                  disabled={!isAgency || uploading}
+                  disabled={uploading}
                 >
                   <Upload className="w-4 h-4 mr-2" />
                   {uploading ? 'Uploading...' : 'Upload Logo'}
@@ -130,41 +118,30 @@ export default function Settings() {
             </div>
           </div>
 
-          {/* Company Name */}
           <div>
-            <Label htmlFor="company-name" className="mb-2 block">Brand Name (shown on dashboard & reports)</Label>
+            <Label htmlFor="company-name" className="mb-2 block">Brand Name (shown on dashboard &amp; reports)</Label>
             <Input
               id="company-name"
               value={companyName}
               onChange={e => setCompanyName(e.target.value)}
               placeholder="Your Company Name"
-              disabled={!isAgency}
               className="max-w-sm"
             />
           </div>
 
           <Button
             onClick={() => saveTenantSettings()}
-            disabled={!isAgency || saving}
+            disabled={saving}
             className="flex items-center gap-2"
           >
             {saved ? <><CheckCircle className="w-4 h-4" /> Saved!</> : saving ? 'Saving...' : 'Save Branding'}
           </Button>
-
-          {!isAgency && (
-            <p className="text-sm text-muted-foreground">
-              Upgrade to the <strong>Agency plan</strong> to unlock custom branding.{' '}
-              <button onClick={() => setUpgradeOpen(true)} className="text-primary underline underline-offset-2">Upgrade now</button>
-            </p>
-          )}
         </CardContent>
       </Card>
 
       <div className="mt-6">
         <TeamManagement />
       </div>
-
-      <UpgradeDialog open={upgradeOpen} onOpenChange={setUpgradeOpen} currentTier={plan?.plan_tier} />
     </div>
   );
 }
