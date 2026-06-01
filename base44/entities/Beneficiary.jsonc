@@ -2,6 +2,10 @@
   "name": "Beneficiary",
   "type": "object",
   "properties": {
+    "owner_email": {
+      "type": "string",
+      "description": "Email of the subscriber who owns this record (used for team data scoping)"
+    },
     "first_name": {
       "type": "string"
     },
@@ -112,50 +116,5 @@
     "first_name",
     "last_name",
     "client_id"
-  ],
-  "rls": {
-    "create": {
-      "user_condition": {
-        "email": {
-          "$exists": true
-        }
-      }
-    },
-    "read": {
-      "$or": [
-        {
-          "created_by": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "update": {
-      "$or": [
-        {
-          "created_by": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "delete": {
-      "$or": [
-        {
-          "created_by": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    }
-  }
+  ]
 }

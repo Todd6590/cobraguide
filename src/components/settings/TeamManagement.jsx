@@ -30,7 +30,7 @@ export default function TeamManagement() {
     mutationFn: async () => {
       const email = newEmail.trim().toLowerCase();
       if (!email) return;
-      // Invite the user to the app
+      // Invite the user — the invite email links to the /join onboarding page
       await base44.users.inviteUser(email, 'user');
       // Create team member record
       await base44.entities.TeamMember.create({

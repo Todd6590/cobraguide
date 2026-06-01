@@ -26,6 +26,7 @@ import AffiliateProgram from '@/pages/AffiliateProgram';
 import CobraEligibility from '@/pages/CobraEligibility';
 import Home from '@/pages/Home';
 import SignIn from '@/pages/SignIn';
+import TeamAccept from '@/pages/TeamAccept';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, isAuthenticated } = useAuth();
@@ -47,14 +48,17 @@ const AuthenticatedApp = () => {
     return (
       <Routes>
         <Route path="/signin" element={<SignIn />} />
+        <Route path="/join" element={<TeamAccept />} />
         <Route path="*" element={<Home />} />
       </Routes>
     );
+
   }
 
   return (
     <Routes>
       <Route path="/home" element={<Home />} />
+      <Route path="/join" element={<TeamAccept />} />
       <Route element={<Layout />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/clients" element={<Clients />} />
