@@ -2,12 +2,12 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Building2, Users, CalendarClock, 
   Mail, DollarSign, Shield, ChevronLeft, ChevronRight, LogOut, BarChart2, Settings,
-  BookOpen, MessageSquare, Gift, ClipboardList, Award
+  BookOpen, MessageSquare, Gift, ClipboardList, Award, ShieldCheck
 } from 'lucide-react';
+import { useSubscription } from '@/lib/SubscriptionContext';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { base44 } from '@/api/base44Client';
-import { useSubscription } from '@/lib/SubscriptionContext';
 import TrialBanner from '@/components/subscription/TrialBanner';
 
 const navItems = [
@@ -24,7 +24,7 @@ const navItems = [
 export default function Layout() {
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
-  const { tenantSettings, isAgency } = useSubscription();
+  const { tenantSettings, isAgency, user } = useSubscription();
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -84,6 +84,7 @@ export default function Layout() {
             { path: '/affiliate-program', label: 'Affiliate Program', icon: Award },
             { path: '/contact', label: 'Contact Us', icon: MessageSquare },
             { path: '/settings', label: 'Settings', icon: Settings },
+            ...(user?.role === 'admin' ? [{ path: '/admin/users', label: 'Users', icon: ShieldCheck }] : []),
           ].map((item) => {
             const isActive = location.pathname === item.path;
             return (

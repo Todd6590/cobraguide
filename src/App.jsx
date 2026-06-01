@@ -27,6 +27,7 @@ import CobraEligibility from '@/pages/CobraEligibility';
 import Home from '@/pages/Home';
 import SignIn from '@/pages/SignIn';
 import TeamAccept from '@/pages/TeamAccept';
+import AdminUsers from '@/pages/AdminUsers';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, isAuthenticated } = useAuth();
@@ -75,6 +76,7 @@ const AuthenticatedApp = () => {
         <Route path="/referrals" element={<Referrals />} />
         <Route path="/affiliate-program" element={<AffiliateProgram />} />
         <Route path="/cobra-eligibility" element={<CobraEligibility />} />
+        <Route path="/admin/users" element={<AdminUsers />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
