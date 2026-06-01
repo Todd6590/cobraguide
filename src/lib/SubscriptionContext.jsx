@@ -4,6 +4,8 @@ import { useTeam } from '@/lib/TeamContext';
 
 const SubscriptionContext = createContext(null);
 
+const TRIAL_DAYS = 3;
+
 export const PLAN = {
   label: 'COBRA Shield Pro',
   price: '$19/mo',
@@ -32,7 +34,7 @@ export function SubscriptionProvider({ children }) {
       } else if (emailToUse === me.email) {
         const created = await base44.entities.SubscriptionPlan.create({
           user_email: me.email,
-          plan_tier: 'professional',
+          plan_tier: 'trial',
           client_limit: 0,
           trial_start_date: new Date().toISOString().split('T')[0],
         });
@@ -43,7 +45,7 @@ export function SubscriptionProvider({ children }) {
       if (settings.length > 0) setTenantSettings(settings[0]);
 
     } catch (e) {
-      // not authenticated or error — leave as null
+      // not authenticated or error
     } finally {
       setLoading(false);
     }
@@ -55,10 +57,24 @@ export function SubscriptionProvider({ children }) {
     }
   }, [teamLoading, ownerEmail]);
 
-  // Everyone gets unlimited — no tier gating
-  const isActive = !!plan;
-  const clientLimit = 0;       // 0 = unlimited
-  const beneficiaryLimit = 0;  // 0 = unlimited
+  const isTrial = plan?.plan_tier === 'trial';
+
+  const trialExpired = (() => {
+    if (!isTrial || !plan?.trial_start_date) return false;
+    const start = new Date(plan.trial_start_date);
+    const diffDays = (new Date() - start) / (1000 * 60 * 60 * 24);
+    return diffDays >= TRIAL_DAYS;
+  })();
+
+  const trialDaysRemaining = (() => {
+    if (!isTrial || !plan?.trial_start_date) return null;
+    const start = new Date(plan.trial_start_date);
+    const diffDays = (new Date() - start) / (1000 * 60 * 60 * 24);
+    return Math.max(0, Math.ceil(TRIAL_DAYS - diffDays));
+  })();
+
+  const clientLimit = 0;      // always unlimited
+  const beneficiaryLimit = 0; // always unlimited
 
   const refreshPlan = () => load();
 
@@ -66,12 +82,8 @@ export function SubscriptionProvider({ children }) {
     <SubscriptionContext.Provider value={{
       plan, tenantSettings, loading, user,
       clientLimit, beneficiaryLimit,
-      isActive,
-      // Legacy aliases kept so existing components don't break
       isAgency: true,
-      isTrial: false,
-      trialExpired: false,
-      trialDaysRemaining: null,
+      isTrial, trialExpired, trialDaysRemaining,
       isStudyGroupTrial: false,
       studyGroupExpired: false,
       studyGroupDaysRemaining: null,
