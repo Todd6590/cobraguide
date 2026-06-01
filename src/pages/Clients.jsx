@@ -13,6 +13,7 @@ import ClientFormDialog from '@/components/clients/ClientFormDialog';
 import UpgradeDialog from '@/components/subscription/UpgradeDialog';
 import { Link } from 'react-router-dom';
 import { useSubscription } from '@/lib/SubscriptionContext';
+import { useTeam } from '@/lib/TeamContext';
 
 export default function Clients() {
   const [search, setSearch] = useState('');
@@ -21,16 +22,21 @@ export default function Clients() {
   const [editing, setEditing] = useState(null);
   const queryClient = useQueryClient();
   const { clientLimit, plan, isTrial, trialExpired, user } = useSubscription();
+  const { ownerEmail } = useTeam();
 
-  const { data: clients = [], isLoading } = useQuery({ queryKey: ['clients'], queryFn: () => base44.entities.Client.list() });
+  const { data: clients = [], isLoading } = useQuery({
+    queryKey: ['clients', ownerEmail],
+    queryFn: () => ownerEmail ? base44.entities.Client.filter({ owner_email: ownerEmail }) : [],
+    enabled: !!ownerEmail,
+  });
 
-  // Only count records the current user created toward the limit (sample/demo data doesn't count)
-  const ownedClientCount = clients.filter(c => c.created_by === user?.email).length;
+  // Count all clients visible to this team (scoped by owner_email)
+  const ownedClientCount = clients.length;
 
   const saveMutation = useMutation({
     mutationFn: (data) => editing
       ? base44.entities.Client.update(editing.id, data)
-      : base44.entities.Client.create(data),
+      : base44.entities.Client.create({ ...data, owner_email: ownerEmail }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
       setDialogOpen(false);

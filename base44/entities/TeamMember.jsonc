@@ -1,0 +1,40 @@
+{
+  "name": "TeamMember",
+  "type": "object",
+  "properties": {
+    "owner_email": {
+      "type": "string",
+      "description": "Email of the subscriber who owns this team"
+    },
+    "member_email": {
+      "type": "string",
+      "description": "Email of the team member being granted access"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "user"
+      ],
+      "default": "user",
+      "description": "admin = full access including team management; user = full access except managing team members"
+    },
+    "invited_by": {
+      "type": "string",
+      "description": "Email of the user who sent the invite"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "pending"
+      ],
+      "default": "active"
+    }
+  },
+  "required": [
+    "owner_email",
+    "member_email",
+    "role"
+  ]
+}

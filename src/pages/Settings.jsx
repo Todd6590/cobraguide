@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import PageHeader from '@/components/shared/PageHeader';
 import UpgradeDialog from '@/components/subscription/UpgradeDialog';
 import { Upload, CheckCircle, Building2, Zap, Image } from 'lucide-react';
+import TeamManagement from '@/components/settings/TeamManagement';
 
 export default function Settings() {
   const { plan, tenantSettings, isAgency, currentPlanInfo, user, refreshPlan, setTenantSettings } = useSubscription();
@@ -158,6 +159,10 @@ export default function Settings() {
           )}
         </CardContent>
       </Card>
+
+      <div className="mt-6">
+        <TeamManagement />
+      </div>
 
       <UpgradeDialog open={upgradeOpen} onOpenChange={setUpgradeOpen} currentTier={plan?.plan_tier} />
     </div>

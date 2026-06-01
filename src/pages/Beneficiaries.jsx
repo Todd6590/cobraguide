@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Plus, Search, MoreHorizontal, Pencil, Trash2, Zap } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useSubscription } from '@/lib/SubscriptionContext';
+import { useTeam } from '@/lib/TeamContext';
 import UpgradeDialog from '@/components/subscription/UpgradeDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,14 +31,17 @@ export default function Beneficiaries() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { beneficiaryLimit, isTrial, trialExpired, user } = useSubscription();
+  const { ownerEmail } = useTeam();
 
   const { data: beneficiaries = [], isLoading } = useQuery({
-    queryKey: ['beneficiaries'],
-    queryFn: () => base44.entities.Beneficiary.list()
+    queryKey: ['beneficiaries', ownerEmail],
+    queryFn: () => ownerEmail ? base44.entities.Beneficiary.filter({ owner_email: ownerEmail }) : [],
+    enabled: !!ownerEmail,
   });
   const { data: clients = [] } = useQuery({
-    queryKey: ['clients'],
-    queryFn: () => base44.entities.Client.list()
+    queryKey: ['clients', ownerEmail],
+    queryFn: () => ownerEmail ? base44.entities.Client.filter({ owner_email: ownerEmail }) : [],
+    enabled: !!ownerEmail,
   });
   const { data: existingNotices = [] } = useQuery({
     queryKey: ['notices'],
@@ -53,7 +57,7 @@ export default function Beneficiaries() {
 
       const saved = editing
         ? await base44.entities.Beneficiary.update(editing.id, beneficiaryData)
-        : await base44.entities.Beneficiary.create(beneficiaryData);
+        : await base44.entities.Beneficiary.create({ ...beneficiaryData, owner_email: ownerEmail });
 
       if (event_type && event_date) {
         const clientRecord = clients.find(c => c.id === saved.client_id);
@@ -207,7 +211,7 @@ export default function Beneficiaries() {
     b.client_name?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const ownedCount = beneficiaries.filter(b => b.created_by === user?.email).length;
+  const ownedCount = beneficiaries.length;
   const atLimit = beneficiaryLimit > 0 && ownedCount >= beneficiaryLimit;
 
   const handleAddParticipant = () => {

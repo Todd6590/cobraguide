@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import { SubscriptionProvider } from '@/lib/SubscriptionContext';
+import { TeamProvider } from '@/lib/TeamContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 
 import Layout from '@/components/Layout';
@@ -81,9 +82,11 @@ function App() {
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
         <Router>
-          <SubscriptionProvider>
-            <AuthenticatedApp />
-          </SubscriptionProvider>
+          <TeamProvider>
+            <SubscriptionProvider>
+              <AuthenticatedApp />
+            </SubscriptionProvider>
+          </TeamProvider>
         </Router>
         <Toaster />
       </QueryClientProvider>

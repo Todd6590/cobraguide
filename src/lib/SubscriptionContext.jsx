@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { useTeam } from '@/lib/TeamContext';
 
 const SubscriptionContext = createContext(null);
 
@@ -17,17 +18,21 @@ export function SubscriptionProvider({ children }) {
   const [tenantSettings, setTenantSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const { ownerEmail, loading: teamLoading } = useTeam();
 
-  const load = async () => {
+  const load = async (resolvedOwnerEmail) => {
     try {
       const me = await base44.auth.me();
       setUser(me);
 
-      const plans = await base44.entities.SubscriptionPlan.filter({ user_email: me.email });
+      const emailToUse = resolvedOwnerEmail || me.email;
+
+      // Load plan belonging to the owner (subscriber), not the team member
+      const plans = await base44.entities.SubscriptionPlan.filter({ user_email: emailToUse });
       if (plans.length > 0) {
         setPlan(plans[0]);
-      } else {
-        // New user — start on trial
+      } else if (emailToUse === me.email) {
+        // Only create a new trial if this user IS the owner (not a team member)
         const created = await base44.entities.SubscriptionPlan.create({
           user_email: me.email,
           plan_tier: 'trial',
@@ -37,7 +42,7 @@ export function SubscriptionProvider({ children }) {
         setPlan(created);
       }
 
-      const settings = await base44.entities.TenantSettings.filter({ user_email: me.email });
+      const settings = await base44.entities.TenantSettings.filter({ user_email: emailToUse });
       if (settings.length > 0) setTenantSettings(settings[0]);
 
     } catch (e) {
@@ -47,7 +52,11 @@ export function SubscriptionProvider({ children }) {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    if (!teamLoading) {
+      load(ownerEmail);
+    }
+  }, [teamLoading, ownerEmail]);
 
   const isTrial = plan?.plan_tier === 'trial';
 

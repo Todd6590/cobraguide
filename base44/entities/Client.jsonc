@@ -2,6 +2,10 @@
   "name": "Client",
   "type": "object",
   "properties": {
+    "owner_email": {
+      "type": "string",
+      "description": "Email of the subscriber who owns this client record (used for team data scoping)"
+    },
     "company_name": {
       "type": "string",
       "description": "Name of the client company"
@@ -83,50 +87,5 @@
   },
   "required": [
     "company_name"
-  ],
-  "rls": {
-    "create": {
-      "user_condition": {
-        "email": {
-          "$exists": true
-        }
-      }
-    },
-    "read": {
-      "$or": [
-        {
-          "created_by": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "update": {
-      "$or": [
-        {
-          "created_by": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "delete": {
-      "$or": [
-        {
-          "created_by": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    }
-  }
+  ]
 }
