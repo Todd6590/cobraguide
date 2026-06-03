@@ -28,6 +28,7 @@ import Home from '@/pages/Home';
 import SignIn from '@/pages/SignIn';
 import TeamAccept from '@/pages/TeamAccept';
 import AdminUsers from '@/pages/AdminUsers';
+import AuthCallback from '@/pages/AuthCallback';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, isAuthenticated } = useAuth();
@@ -50,6 +51,7 @@ const AuthenticatedApp = () => {
       <Routes>
         <Route path="/signin" element={<SignIn />} />
         <Route path="/join" element={<TeamAccept />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="*" element={<Home />} />
       </Routes>
     );
