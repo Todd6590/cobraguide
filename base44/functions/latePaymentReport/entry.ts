@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { authorizeCronOrAdmin } from '../../shared/cronAuth.ts';
 
 const fmt = (d) => {
   if (!d) return '—';
@@ -125,8 +126,11 @@ const buildReportHtml = (lateParticipants, reportDate) => {
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
 
-  // Allow both manual (authenticated user) and scheduled (no user) invocations
   const body = await req.json().catch(() => ({}));
+  const auth = await authorizeCronOrAdmin(base44, body);
+  if (!auth.ok) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
   const today = new Date();
   const dayOfMonth = today.getDate();

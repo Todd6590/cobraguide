@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { authorizeCronOrAdmin } from '../../shared/cronAuth.ts';
 
 /**
  * Monthly compliance review:
@@ -146,10 +147,10 @@ function checkEventCompliance(event, eventNotices, beneficiary) {
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
 
-  // Allow both scheduled (no user) and manual (admin user) invocations
-  const user = await base44.auth.me().catch(() => null);
-  if (user && user.role !== 'admin') {
-    return Response.json({ error: 'Forbidden' }, { status: 403 });
+  const body = await req.json().catch(() => ({}));
+  const auth = await authorizeCronOrAdmin(base44, body);
+  if (!auth.ok) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const today = toDateOnly(new Date());

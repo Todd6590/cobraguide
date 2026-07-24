@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { authorizeCronOrAdmin } from '../../shared/cronAuth.ts';
 
 const fmt = (d) => {
   if (!d) return '—';
@@ -64,6 +65,12 @@ const buildReminderHtml = (notices, client) => {
 
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
+
+  const body = await req.json().catch(() => ({}));
+  const auth = await authorizeCronOrAdmin(base44, body);
+  if (!auth.ok) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
   const today = new Date();
   // Target: notices whose due_date is exactly 10 days from today
