@@ -348,7 +348,7 @@ export default function NoticeViewer({ notice, beneficiary, qualifyingEvent, cli
     win.document.write(`<!DOCTYPE html>
 <html>
 <head>
-  <title>${noticeLabel} — ${beneficiary.first_name} ${beneficiary.last_name}</title>
+  <title>COBRA Notice</title>
   <style>
     body { font-family: 'Times New Roman', serif; font-size: 12pt; color: #000; margin: 1in; line-height: 1.6; }
     pre { white-space: pre-wrap; font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.6; }
@@ -356,10 +356,14 @@ export default function NoticeViewer({ notice, beneficiary, qualifyingEvent, cli
   </style>
 </head>
 <body>
-  <pre>${noticeText}</pre>
+  <pre></pre>
 </body>
 </html>`);
     win.document.close();
+    // Safely populate user-derived content via textContent (no HTML parsing)
+    win.document.title = `${noticeLabel} — ${beneficiary.first_name} ${beneficiary.last_name}`;
+    const pre = win.document.body && win.document.body.querySelector('pre');
+    if (pre) pre.textContent = noticeText;
     win.focus();
     win.print();
   };
