@@ -106,20 +106,14 @@
     "referral_code"
   ],
   "rls": {
-    "create": {
-      "user_condition": {
-        "email": {
-          "$exists": true
-        }
-      }
-    },
+    "create": null,
     "read": {
       "$or": [
         {
-          "referrer_email": "{{user.email}}"
+          "data.referrer_email": "{{user.email}}"
         },
         {
-          "referred_email": "{{user.email}}"
+          "data.referred_email": "{{user.email}}"
         },
         {
           "user_condition": {
